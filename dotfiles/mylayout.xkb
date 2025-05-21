@@ -1,0 +1,13 @@
+xkb_keymap {
+xkb_keycodes  { include "evdev+aliases(qwerty)"	};
+xkb_types     { include "complete"	};
+xkb_compat    { include "complete"	};
+partial
+xkb_symbols "swap" {
+    include "pc+us+inet(evdev)+altwin(ctrl_win)"
+    key <RTRN> { [ backslash, bar ] };
+    key <BKSL> { [ Return, Return ] };
+    replace key <LSGT> { [ Shift_L, Super_L ] };
+};
+xkb_geometry { include "pc(pc104)" };
+};

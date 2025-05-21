@@ -1,0 +1,215 @@
+local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
+local lspconfig = require('lspconfig')
+
+vim.lsp.set_log_level("debug")
+
+lspconfig.nil_ls.setup({
+	capabilities = lsp_capabilities,
+	on_attach = on_attach,
+	settings = {
+		['nil'] = {
+			formatting = {
+				command = { "nixfmt" },
+			},
+		},
+	},
+})
+lspconfig.marksman.setup {
+	capabilities = lsp_capabilities,
+	on_attach = on_attach,
+}
+lspconfig.texlab.setup {
+	capabilities = lsp_capabilities,
+	on_attach = on_attach,
+}
+--require('lspconfig').ds_pinyin_lsp.setup {
+--init_options = {
+--db_path = "~/Documents/dict.db3"
+--}
+--}
+--
+lspconfig.pylsp.setup {
+	capabilities = lsp_capabilities,
+	on_attach = on_attach,
+	settings = {
+		pylsp = {
+			plugins = {
+				ruff = {
+					enabled = true,          -- Enable the plugin
+					formatEnabled = true,    -- Enable formatting using ruffs formatter
+					executable = "<path-to-ruff-bin>", -- Custom path to ruff
+					config = "<path_to_custom_ruff_toml>", -- Custom config for ruff to use
+					extendSelect = { "I" },  -- Rules that are additionally used by ruff
+					extendIgnore = { "C90" }, -- Rules that are additionally ignored by ruff
+					format = { "I" },        -- Rules that are marked as fixable by ruff that should be fixed when running textDocument/formatting
+					severities = { ["D212"] = "I" }, -- Optional table of rules where a custom severity is desired
+					unsafeFixes = false,     -- Whether or not to offer unsafe fixes as code actions. Ignored with the "Fix All" action
+
+					-- Rules that are ignored when a pyproject.toml or ruff.toml is present:
+					lineLength = 88,                   -- Line length to pass to ruff checking and formatting
+					exclude = { "__about__.py" },      -- Files to be excluded by ruff checking
+					select = { "F" },                  -- Rules to be enabled by ruff
+					ignore = { "D210" },               -- Rules to be ignored by ruff
+					perFileIgnores = { ["__init__.py"] = "CPY001" }, -- Rules that should be ignored for specific files
+					preview = false,                   -- Whether to enable the preview style linting and formatting.
+					targetVersion = "py310",           -- The minimum python version to target (applies for both linting and formatting).
+				},
+			},
+		},
+	},
+}
+
+lspconfig.pyright.setup {
+	capabilities = lsp_capabilities,
+	on_attach = function()
+		vim.keymap.set('n', '<F4>', function() require('dap').continue() end)
+		vim.keymap.set('n', '<F6>', function() require('dap').restart() end)
+		vim.keymap.set('n', '<F3>', function() require('dap').step_over() end)
+		vim.keymap.set('n', '<F1>', function() require('dap').step_into() end)
+		vim.keymap.set('n', '<F2>', function() require('dap').step_out() end)
+		vim.keymap.set('n', '<leader>s', function() require('dap').terminate() end)
+		vim.keymap.set('n', '<F8>', function() require('dap').toggle_breakpoint() end)
+		vim.keymap.set('n', '<F9>', function() require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: ')) end)
+		vim.keymap.set('n', '<leader>dp', function() require("dap").pause() end)
+		vim.keymap.set('n', '<Leader>lp',
+			function() require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end)
+		vim.keymap.set('n', '<leader>lb', function() require('dap').list_breakpoints() end)
+		vim.keymap.set('n', '<leader>cb', function() require('dap').clear_breakpoints() end)
+		vim.keymap.set('n', '<Leader>dr', function() require('dap').repl.toggle() end)
+		vim.keymap.set("n", "<leader>du", function() require('dapui').toggle() end)
+		vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end)
+		vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function() require('dap.ui.widgets').hover() end)
+		vim.keymap.set({ 'n', 'v' }, '<Leader>dp', function() require('dap.ui.widgets').preview() end)
+		vim.keymap.set({ 'n', 'v' }, '<Leader>de', function() require('dapui').eval() end)
+		vim.keymap.set('n', '<Leader>df',
+			function()
+				local widgets = require('dap.ui.widgets')
+				widgets.centered_float(widgets.frames)
+			end)
+		vim.keymap.set('n', '<Leader>ds',
+			function()
+				local widgets = require('dap.ui.widgets')
+				widgets.centered_float(widgets.scopes)
+			end)
+	end,
+	settings = {
+		pyright = { autoImportCompletion = true, },
+		python = {
+			analysis = {
+				autoSearchPaths = true,
+				diagnosticMode = 'workspace',
+				useLibraryCodeForTypes = true,
+				typeCheckingMode = 'basic'
+			}
+		}
+	}
+}
+
+lspconfig.lua_ls.setup {
+	capabilities = lsp_capabilities,
+	on_attach = function(client)
+		client.server_capabilities.documentFormattingProvider = true
+		client.server_capabilities.documentRangeFormattingProvider = true
+	end,
+	settings = {
+		Lua = {
+			diagnostics = {
+				globals = { 'vim' },
+			},
+			format = {
+				enable = true,
+				defaultConfig = {
+					indent_style = "space",
+					indent_size = "8",
+				}
+			},
+		},
+	},
+}
+
+-- Global mappings.
+-- See `:help vim.diagnostic.*` for documentation on any of the below functions
+vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
+vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
+
+-- Use LspAttach autocommand to only map the following keys
+-- after the language server attaches to the current buffer
+vim.api.nvim_create_autocmd('LspAttach', {
+	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+	callback = function(ev)
+		-- Enable completion triggered by <c-x><c-o>
+		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+
+		-- Buffer local mappings.
+		-- See `:help vim.lsp.*` for documentation on any of the below functions
+		local opts = { buffer = ev.buf }
+		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+		vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+		vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+		vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
+		vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
+		vim.keymap.set('n', '<space>wl', function() print(vim.inspect(vim.lsp.buf.list_workspace_folders())) end, opts)
+		vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
+		vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
+		vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
+		vim.keymap.set('n', '<space>f', function() vim.lsp.buf.format { async = true } end, opts)
+		--vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+		vim.keymap.set('n', 'gr', require('telescope.builtin').lsp_references, opts)
+	end,
+})
+
+
+
+require('lspkind').init({
+	-- DEPRECATED (use mode instead): enables text annotations
+	--
+	-- default: true
+	-- with_text = true,
+
+	-- defines how annotations are shown
+	-- default: symbol
+	-- options: 'text', 'text_symbol', 'symbol_text', 'symbol'
+	mode = 'symbol_text',
+
+	-- default symbol map
+	-- can be either 'default' (requires nerd-fonts font) or
+	-- 'codicons' for codicon preset (requires vscode-codicons font)
+	--
+	-- default: 'default'
+	preset = 'codicons',
+
+	-- override preset symbols
+	--
+	-- default: {}
+	symbol_map = {
+		Text = "󰉿",
+		Method = "󰆧",
+		Function = "󰊕",
+		Constructor = "",
+		Field = "󰜢",
+		Variable = "󰀫",
+		Class = "󰠱",
+		Interface = "",
+		Module = "",
+		Property = "󰜢",
+		Unit = "󰑭",
+		Value = "󰎠",
+		Enum = "",
+		Keyword = "󰌋",
+		Snippet = "",
+		Color = "󰏘",
+		File = "󰈙",
+		Reference = "󰈇",
+		Folder = "󰉋",
+		EnumMember = "",
+		Constant = "󰏿",
+		Struct = "󰙅",
+		Event = "",
+		Operator = "󰆕",
+		TypeParameter = "",
+	},
+})

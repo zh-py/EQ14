@@ -1,0 +1,7 @@
+partial modifier_keys
+xkb_symbols "mylayout"
+{
+	include "pc+us+inet(evdev)+altwin(ctrl_win)"
+	key <RTRN> { [ backslash, bar ] };
+	key <BKSL> { [ Return, Return ] };
+};
