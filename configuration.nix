@@ -4,9 +4,16 @@
 
 {
   pkgs,
+  config,
+  lib,
   inputs,
   ...
 }:
+let
+  nextcloudHostname = "nextcloudpy.com"; # Or "YOUR_NIXOS_IP_ADDRESS"
+  nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
+  nextcloudPath = "/var/lib/nextcloud";
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -36,6 +43,10 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
+    kernel.sysctl = {
+      # Allow unprivileged users to bind to ports >=80 (instead of default 1024)
+      "net.ipv4.ip_unprivileged_port_start" = 80;
+    };
     kernelModules = [ "tun" ];
   };
 
@@ -62,13 +73,34 @@
 
     firewall = {
       enable = true;
+      allowPing = true;
       allowedTCPPorts = [
         2283
         56789
+        3478
+        80
+        443
+        8080
+        8443
+        139#samba
+        445#samba
       ];
-      allowedUDPPorts = [ 2283 ]; # 2283:immich
-      trustedInterfaces = [ "tun0" ];
+      allowedUDPPorts = [
+        2283
+        3478
+        137#samba
+        138#samba
+      ]; # 2283:immich 3478 8080 8443 nextcloud
+      trustedInterfaces = [
+        "tun0"
+        "wlo1"
+      ];
     };
+
+    extraHosts = ''
+      192.168.124.15 nextcloud.tailffcc5b.ts.net
+    '';
+
     #proxy = {
     #default = "http://192.168.124.9:10808/";
     ##noProxy = "127.0.0.1,localhost,internal.domain";
@@ -76,20 +108,113 @@
 
     useHostResolvConf = false;
     resolvconf = {
-      enable = false;
+      enable = true;
       #useLocalResolver = true;
     };
-    #nameservers = [ "127.0.0.1" ];
+    nameservers = [
+      "127.0.0.1"
+      "8.8.8.8"
+      "1.1.1.1"
+    ];
   };
 
   services.resolved = {
-    enable = true;
+    enable = false;
     fallbackDns = [ "127.0.0.1" ];
     extraConfig = ''
       DNS=127.0.0.1
       DNSStubListener=yes
       Domains=~.
     '';
+  };
+
+  services.openssh = {
+    enable = true;
+    ports = [ 22 ];
+    settings = {
+      PasswordAuthentication = false;
+      AllowUsers = [ "py" ]; # Allows all users by default. Can be [ "user1" "user2" ]
+      UseDns = false;
+      X11Forwarding = true;
+      PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+    };
+  };
+
+  services.immich = {
+    enable = false;
+    port = 2283;
+  };
+
+  services.samba = {
+    enable = true;
+    openFirewall = true;
+    settings = {
+      global = {
+        security = "user";
+        "workgroup" = "WORKGROUP";
+        "server string" = "smbnix";
+        "netbios name" = "smbnix";
+        #"use sendfile" = "yes";
+        #"max protocol" = "smb2";
+        # note: localhost is the ipv6 localhost ::1
+        "hosts allow" = "192.168.124. 127.0.0.1 localhost";
+        "hosts deny" = "0.0.0.0/0";
+        "guest account" = "nobody";
+        "map to guest" = "never";
+        "name resolve order" = "bcast host";
+        "min protocol" = "SMB2";
+        "max protocol" = "SMB3";
+      };
+      "myfiles" = {
+        "path" = "/storage/myfiles";
+        "browseable" = "yes";
+        "read only" = "no";
+        "guest ok" = "yes";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+        "force user" = "sambauser";
+        "force group" = "users";
+      };
+      "private" = {
+        "path" = "/storage/Private";
+        "browseable" = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+        "force user" = "username";
+        "force group" = "groupname";
+      };
+    };
+  };
+
+  services.samba-wsdd = {
+    enable = true;
+    openFirewall = true;
+  };
+
+  virtualisation.docker = {
+    enable = true;
+
+    daemon.settings = {
+      # Use port 20172 for HTTP protocol with "Rule of Splitting Traffic"
+      "http-proxy" = "http://127.0.0.1:20172";
+      "https-proxy" = "http://127.0.0.1:20172";
+      # It's important to tell Docker not to proxy internal Docker network traffic.
+      # 172.17.0.0/16 is the default Docker bridge.
+      # 172.20.0.0/16 is the range for 'nextcloud-aio' network in your compose.yml.
+      "no-proxy" = "localhost,127.0.0.1,172.17.0.0/16,172.20.0.0/16";
+    };
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
+    };
+    daemon.settings = {
+      dns = [
+        "8.8.8.8"
+        "1.1.1.1"
+      ];
+    };
   };
 
   time.timeZone = "Asia/Shanghai";
@@ -111,7 +236,7 @@
     type = "fcitx5";
     enable = true;
     fcitx5 = {
-      waylandFrontend = false;
+      waylandFrontend = true;
       addons = with pkgs; [
         fcitx5-gtk
         fcitx5-chinese-addons
@@ -122,21 +247,6 @@
   };
 
   services.seatd.enable = true;
-
-  services.gnome.gnome-keyring.enable = true;
-  security.pam.services.gdm.enableGnomeKeyring = true;
-
-  programs.sway = {
-    enable = false;
-    wrapperFeatures.gtk = true;
-  };
-  programs.hyprland = {
-    enable = false;
-    xwayland.enable = true;
-  };
-  programs.labwc = {
-    enable = true;
-  };
 
   environment.sessionVariables = {
     QT_QPA_PLATFORMTHEME = "qt5ct";
@@ -150,8 +260,19 @@
 
   security.polkit.enable = true;
 
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.gnome.gnome-keyring.enable = true;
+  #security.pam.services.gdm.enableGnomeKeyring = true;
+  security.pam.services.gdm = {
+    enableGnomeKeyring = true;
+  };
+
+  services.xserver = {
+    enable = true;
+    displayManager = {
+      gdm.enable = true;
+    };
+    desktopManager.gnome.enable = true;
+  };
 
   hardware.uinput.enable = true;
 
@@ -238,6 +359,129 @@
     };
   };
 
+  services.tailscale.enable = true;
+
+  services.nextcloud = {
+    enable = false;
+    package = pkgs.nextcloud31;
+    hostName = nextcloudHostname;
+    config = {
+      #adminuser = "admin";
+      adminpassFile = "/var/nextcloudpass/nextcloud-admin-pass";
+      dbtype = "pgsql";
+    };
+    settings = {
+      overwritehost = nextcloudHostname; # Tell Nextcloud its external host
+      overwriteprotocol = "https"; # Tell Nextcloud it's accessed via HTTPS
+      trusted_proxies = [ "127.0.0.1" ]; # Nginx is proxying from localhost
+      trusted_domains = [
+        nextcloudHostname
+        nextcloudIpAddress
+      ];
+    };
+    https = false;
+    #datadir = "${nextcloudPath}";
+
+    database.createLocally = true;
+    phpOptions = {
+      #"memory_limit" = "1G";
+      "opcache.enable" = "true";
+      "opcache.interned_strings_buffer" = "16";
+      "opcache.memory_consumption" = "128";
+      "opcache.save_comments" = "1";
+      "opcache.revalidate_freq" = "1";
+    };
+    configureRedis = true;
+
+    nginx.recommendedHttpHeaders = true;
+  };
+
+  #security.acme = {
+  #certs."${nextcloudHostname}".email = "pierrez1984@gmail.com";
+
+  #acceptTerms = true;
+
+  ## Optionally, set a staging environment for testing before going live
+  ## useStaging = true;  # Uncomment to use Let's Encrypt's staging environment (for testing)
+  #};
+
+  services.nginx = {
+    enable = false;
+    virtualHosts."${nextcloudHostname}" = {
+      #root = "${nextcloudPath}";
+      serverName = "${nextcloudHostname}";
+
+      #enableACME = true; # Enable automatic SSL certificate from Let's Encrypt
+
+      sslCertificate = "/etc/nginx/ssl/nextcloud.crt";
+      sslCertificateKey = "/etc/nginx/ssl/nextcloud.key";
+      listen = [
+        {
+          port = 80;
+          addr = "0.0.0.0";
+        } # Listen on all IP addresses for HTTP
+        {
+          port = 443;
+          ssl = true;
+          addr = "0.0.0.0";
+        } # Listen on all IP addresses for HTTPS
+      ];
+      http2 = true;
+      http3 = true;
+      forceSSL = true; # Redirect HTTP to HTTPS
+      locations."/" = {
+        proxyPass = "unix:/run/php/php7.4-fpm.sock|fcgi://localhost";
+        tryFiles = "$uri $uri/ =404";
+        #proxySetHeader = [
+        #"Host $host"
+        #"X-Real-IP $remote_addr"
+        #"X-Forwarded-For $proxy_add_x_forwarded_for"
+        #];
+      };
+    };
+  };
+
+  # Define a virtual host in Nginx for your Nextcloud instance
+  #services.nginx.virtualHosts."${nextcloudHostname}" = {
+  ## Listen for HTTPS traffic on port 443
+  #listenAddresses = [
+  ## Listen for HTTPS traffic on port 443 with SSL enabled
+  #{
+  #addr = "0.0.0.0";
+  #port = 443;
+  #ssl = true;
+  #}
+  ## Listen for HTTP traffic on port 80 (for redirect to HTTPS)
+  #{
+  #addr = "0.0.0.0";
+  #port = 80;
+  #}
+  #];
+  ## Path to your self-signed SSL certificate and key
+  #sslCertificate = "/etc/ssl/nextcloud/nextcloud.crt";
+  #sslCertificateKey = "/etc/ssl/nextcloud/nextcloud.key";
+
+  ## Proxy requests to the Nextcloud PHP-FPM socket.
+  ## Use lib.mkForce to ensure this definition takes precedence if the Nextcloud module
+  ## tries to define its own location block for this virtual host.
+  #locations."/" = lib.mkForce {
+  #proxyPass = "unix:${config.services.nextcloud.phpFpmSocket}";
+  #recommendedProxySettings = true;
+  #};
+
+  #extraConfig = ''
+  #if ($scheme = http) {
+  #return 301 https://$host$request_uri;
+  #}
+  #rewrite /.well-known/carddav /remote.php/dav permanent;
+  #rewrite /.well-known/caldav /remote.php/dav permanent;
+  #'';
+  #};
+
+  services.postgresql = {
+    enable = true;
+  };
+
   fonts.packages = with pkgs; [
     # https://wiki.archlinux.org/title/Font_configuration
     font-awesome
@@ -263,14 +507,6 @@
 
   ];
 
-  virtualisation.docker = {
-    enable = true;
-    rootless = {
-      enable = true;
-      setSocketVariable = true;
-    };
-  };
-
   users.users.py = {
     isNormalUser = true;
     description = "py";
@@ -289,6 +525,14 @@
     ];
     packages = with pkgs; [
     ];
+  };
+
+  users.users.sambauser = {
+    isNormalUser = true;
+    extraGroups = [
+      "wheel"
+    ];
+    description = "Samba user for local usage.";
   };
 
   nixpkgs.config.allowUnfree = true;
@@ -355,9 +599,12 @@
     virtualgl
     font-manager
     fontpreview
+    php
+    nextcloud-client
+    ngrok
 
-    sing-box
-    gui-for-singbox
+    #sing-box
+    #gui-for-singbox
   ];
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
@@ -384,10 +631,9 @@
   programs.bandwhich.enable = true;
   networking.nftables.enable = true;
 
-  services.openssh.enable = true;
   programs.clash-verge.enable = true;
   services.shadowsocks.enable = false;
-  services.v2raya.enable = false;
+  services.v2raya.enable = true;
   services.v2ray.enable = false;
   services.xray.enable = false;
   services.mullvad-vpn.enable = false;

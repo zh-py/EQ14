@@ -35,7 +35,6 @@
   # release notes.
   home.stateVersion = "24.11"; # Please read the comment before changing.
 
-
   qt = {
     enable = true;
     platformTheme = {
@@ -43,6 +42,18 @@
     };
     #style = "kvantum";
   };
+
+  #dconf = {
+  #enable = true;
+  #settings = {
+  #"org/gnome/shell" = {
+  #disable-user-extensions = false;
+  #enabled-extensions = with pkgs.gnomeExtensions; [
+  #kimpanel
+  #];
+  #};
+  #};
+  #};
 
   home.packages = with pkgs; [
     #nixos only
@@ -242,7 +253,6 @@
 
   services.mpris-proxy.enable = true;
 
-
   services.fusuma = {
     enable = false;
     extraPackages = with pkgs; [ xdotool ];
@@ -410,7 +420,7 @@
   xdg = {
     enable = false;
     mimeApps = {
-      enable = true;
+      enable = false;
       defaultApplications = {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = "writer.desktop";
         "application/pdf" = "org.pwmt.zathura-pdf-mupdf.desktop";
@@ -430,6 +440,15 @@
   };
 
   # Let Home Manager install and manage itself.
+
+  programs.gnome-shell = {
+    enable = true;
+    extensions = with pkgs.gnomeExtensions; [
+      { package = pkgs.gnomeExtensions.kimpanel; }
+      #{ package = pkgs.gnomeExtensions.dash-to-dock; }
+      #{ package = pkgs.gnomeExtensions.gsconnect; }
+    ];
+  };
   programs.home-manager.enable = true;
   programs.sagemath.enable = true;
   programs.zathura.enable = true;
@@ -484,7 +503,6 @@
   #enable = true;
   #extraConfig = builtins.readFile ./dotfiles/tint2rc;
   #};
-
 
   programs.wofi = {
     enable = false;
@@ -630,9 +648,9 @@
       map cmd+shift+h previous_tab
       map cmd+shift+l next_tab
       #map cmd+c copy_to_clipboard
-      map ctrl+insert copy_and_clear_or_interrupt
+      map ctrl+c copy_and_clear_or_interrupt
       #map cmd+v paste_from_clipboard
-      map shift+insert paste_from_clipboard
+      map ctrl+v paste_from_clipboard
     '';
   };
 
@@ -950,11 +968,11 @@
           '';
       }
       #{
-        #plugin = vim-latex-live-preview;
-        #config = # vim
-          #''
-            #let g:livepreview_previewer = 'zathura'
-          #'';
+      #plugin = vim-latex-live-preview;
+      #config = # vim
+      #''
+      #let g:livepreview_previewer = 'zathura'
+      #'';
       #}
       markdown-preview-nvim
       {
