@@ -35,14 +35,6 @@
   # release notes.
   home.stateVersion = "24.11"; # Please read the comment before changing.
 
-  qt = {
-    enable = true;
-    platformTheme = {
-      name = "qtct";
-    };
-    #style = "kvantum";
-  };
-
   #dconf = {
   #enable = true;
   #settings = {
@@ -65,6 +57,7 @@
     #flclash
     #v2rayn
     dig
+    ethtool
 
     #gui-for-clash
     fusuma
@@ -112,6 +105,7 @@
     playerctl
     bluetooth_battery
     texliveFull
+    pstree
     bar
     pv
     mediainfo-gui
@@ -411,8 +405,8 @@
   #
   home.sessionVariables = {
     EDITOR = "nvim";
-    BROWSER = "firefox";
-    TERMINAL = "kitty";
+    #BROWSER = "firefox";
+    #TERMINAL = "kitty";
     #XDG_CONFIG_HOME = "$HOME/.config";
     #XDG_CONFIG_HOME = lib.mkDefault "$HOME/.config";
   };
@@ -596,6 +590,7 @@
     clock24 = true;
     baseIndex = 1;
     historyLimit = 100000;
+    shell = "${pkgs.zsh}/bin/zsh";
     #newSession = true;
     #escapeTime = 0;
     plugins = with pkgs; [
@@ -611,6 +606,10 @@
     ];
     extraConfig = ''
       set-option -g mouse on
+      set -g default-terminal "tmux-256color"
+      set -ag terminal-overrides ",xterm-256color:RGB"
+      set -g allow-passthrough on
+      set -as terminal-features ',linux:clipboard'
     '';
   };
 
@@ -644,9 +643,11 @@
       map alt+7 goto_tab 7
       map alt+8 goto_tab 8
       map alt+9 goto_tab 9
-      map ctrl+shift+t new_tab_with_cwd
-      map cmd+shift+h previous_tab
-      map cmd+shift+l next_tab
+      map alt+t new_tab_with_cwd
+      map alt+w close_tab
+      map alt+q close_os_window
+      map shift+h previous_tab
+      map shift+l next_tab
       #map cmd+c copy_to_clipboard
       map ctrl+c copy_and_clear_or_interrupt
       #map cmd+v paste_from_clipboard
@@ -916,6 +917,11 @@
       #type = "lua";
       #config = builtins.readFile(./neovim/noice.lua);
       #}
+      {
+        plugin = nvim-osc52;
+        type = "lua";
+        config = builtins.readFile (./neovim/osc52.lua);
+      }
       {
         plugin = nvim-web-devicons;
         type = "lua";

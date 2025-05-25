@@ -9,11 +9,11 @@
   inputs,
   ...
 }:
-let
-  nextcloudHostname = "nextcloudpy.com"; # Or "YOUR_NIXOS_IP_ADDRESS"
-  nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
-  nextcloudPath = "/var/lib/nextcloud";
-in
+#let
+  #nextcloudHostname = "nextcloudpy.com"; # Or "YOUR_NIXOS_IP_ADDRESS"
+  #nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
+  #nextcloudPath = "/var/lib/nextcloud";
+#in
 {
   imports = [
     ./hardware-configuration.nix
@@ -63,12 +63,38 @@ in
     HibernateDelaySec=1h
   '';
 
+  #services.udev.extraRules = ''
+  #SUBSYSTEM=="net", ACTION=="add", KERNEL=="enp2s0", RUN+="${pkgs.ethtool}/bin/ethtool -s %k wol g"
+  #'';
+
   networking = {
     hostName = "NixNAS";
 
-    networkmanager = {
-      enable = true;
-      dns = "systemd-resolved";
+    nftables.enable = true;
+    interfaces = {
+      enp1s0 = {
+        wakeOnLan.enable = true;
+        ipv4.addresses = [
+          {
+            address = "192.168.124.76";
+            prefixLength = 24;
+          }
+        ];
+      };
+      #enp2s0 = {
+      #wakeOnLan.enable = false;
+      #ipv4.addresses = [
+      #{
+      #address = "192.168.124.77";
+      #prefixLength = 24;
+      #}
+      #];
+      #};
+    };
+
+    defaultGateway = {
+      address = "192.168.124.1";
+      interface = "enp1s0";
     };
 
     firewall = {
@@ -78,22 +104,21 @@ in
         2283
         56789
         3478
-        80
-        443
-        8080
-        8443
-        139#samba
-        445#samba
+        139 # samba
+        445 # samba
+        3389 # XRDP
       ];
       allowedUDPPorts = [
         2283
         3478
-        137#samba
-        138#samba
+        137 # samba
+        138 # samba
       ]; # 2283:immich 3478 8080 8443 nextcloud
       trustedInterfaces = [
         "tun0"
         "wlo1"
+        "enp1s0"
+        "enp2s0"
       ];
     };
 
@@ -106,33 +131,61 @@ in
     ##noProxy = "127.0.0.1,localhost,internal.domain";
     #};
 
-    useHostResolvConf = false;
-    resolvconf = {
-      enable = true;
-      #useLocalResolver = true;
-    };
+    #useHostResolvConf = false;
+    #resolvconf = {
+    #enable = true;
+    ##useLocalResolver = true;
+    #};
     nameservers = [
       "127.0.0.1"
       "8.8.8.8"
       "1.1.1.1"
     ];
+
+    #wireless = {
+    #iwd = {
+    #enable = false;
+    #settings = {
+    #General = {
+    #EnableNetworkConfiguration = true;
+    #};
+    #Network = {
+    #EnableIPv6 = true;
+    #RoutePriorityOffset = 300;
+    #};
+    #Settings = {
+    #AutoConnect = true;
+    #};
+    #};
+    #};
+    #};
+    networkmanager = {
+      enable = true;
+      #wifi.backend = "iwd";
+      dns = "systemd-resolved";
+    };
   };
 
   services.resolved = {
-    enable = false;
-    fallbackDns = [ "127.0.0.1" ];
-    extraConfig = ''
-      DNS=127.0.0.1
-      DNSStubListener=yes
-      Domains=~.
-    '';
+    enable = true;
+    fallbackDns = [
+      "8.8.8.8"
+      "1.1.1.1"
+    ];
+    #fallbackDns = [ "127.0.0.1" ];
+    #extraConfig = ''
+    #DNS=127.0.0.1
+    #DNSStubListener=yes
+    #Domains=~.
+    #'';
   };
 
   services.openssh = {
     enable = true;
     ports = [ 22 ];
     settings = {
-      PasswordAuthentication = false;
+      PasswordAuthentication = true;
+      KbdInteractiveAuthentication = false;
       AllowUsers = [ "py" ]; # Allows all users by default. Can be [ "user1" "user2" ]
       UseDns = false;
       X11Forwarding = true;
@@ -145,18 +198,27 @@ in
     port = 2283;
   };
 
+  systemd.tmpfiles.rules = [
+  #"d /var/log/samba 0755 root root"
+  "d /storage/myfiles 2770 root sambashare"
+  ];
+
   services.samba = {
     enable = true;
     openFirewall = true;
+
     settings = {
       global = {
         security = "user";
+        #"log level" = "auth:10 passdb:10 all:5";
+        #"log file" = "/var/log/samba/log.%m"; # THIS IS CRUCIAL
+        #"max log size" = "50000";
+        ##"unix password sync" = "no";
+        #"enable pam" = "no";
+        #"idmap config *" = "backend tdb";
         "workgroup" = "WORKGROUP";
         "server string" = "smbnix";
         "netbios name" = "smbnix";
-        #"use sendfile" = "yes";
-        #"max protocol" = "smb2";
-        # note: localhost is the ipv6 localhost ::1
         "hosts allow" = "192.168.124. 127.0.0.1 localhost";
         "hosts deny" = "0.0.0.0/0";
         "guest account" = "nobody";
@@ -165,25 +227,20 @@ in
         "min protocol" = "SMB2";
         "max protocol" = "SMB3";
       };
+
       "myfiles" = {
-        "path" = "/storage/myfiles";
-        "browseable" = "yes";
+
+        path = "/storage/myfiles";
+        browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "create mask" = "0644";
-        "directory mask" = "0755";
+        "create mask" = "0660";
+        "directory mask" = "2770";
+        #"create mask" = "0644";
+        #"directory mask" = "0755";
         "force user" = "sambauser";
-        "force group" = "users";
-      };
-      "private" = {
-        "path" = "/storage/Private";
-        "browseable" = "yes";
-        "read only" = "no";
-        "guest ok" = "no";
-        "create mask" = "0644";
-        "directory mask" = "0755";
-        "force user" = "username";
-        "force group" = "groupname";
+        "force group" = "sambashare";
+        #"valid users" = [ "@sambashare" ]; #can't turn on!!!!why?????
       };
     };
   };
@@ -255,24 +312,38 @@ in
   };
 
   services.haveged.enable = true;
+  programs.dconf.enable = true;
 
-  services.getty.autologinUser = "py";
-
-  security.polkit.enable = true;
-
-  services.gnome.gnome-keyring.enable = true;
-  #security.pam.services.gdm.enableGnomeKeyring = true;
-  security.pam.services.gdm = {
-    enableGnomeKeyring = true;
-  };
-
-  services.xserver = {
-    enable = true;
-    displayManager = {
-      gdm.enable = true;
+  #services.getty.autologinUser = "py";
+  #security.polkit.enable = true;
+  #security.pam.services.gdm-password.enableGnomeKeyring = true;
+  #programs.seahorse.enable = true;
+  services = {
+    xserver = {
+      enable = true;
+      displayManager = {
+        gdm.enable = false;
+        startx.enable = true;
+      };
+      desktopManager = {
+        gnome = {
+          enable = true;
+        };
+      };
     };
-    desktopManager.gnome.enable = true;
+    displayManager.autoLogin = {
+      enable = false;
+      user = "py";
+    };
+    desktopManager = {
+      plasma6 = {
+        enable = false;
+      };
+    };
   };
+
+  services.xrdp.enable = true;
+  services.xrdp.defaultWindowManager = "gnome-session";
 
   hardware.uinput.enable = true;
 
@@ -359,42 +430,42 @@ in
     };
   };
 
-  services.tailscale.enable = true;
+  services.tailscale.enable = false;
 
-  services.nextcloud = {
-    enable = false;
-    package = pkgs.nextcloud31;
-    hostName = nextcloudHostname;
-    config = {
-      #adminuser = "admin";
-      adminpassFile = "/var/nextcloudpass/nextcloud-admin-pass";
-      dbtype = "pgsql";
-    };
-    settings = {
-      overwritehost = nextcloudHostname; # Tell Nextcloud its external host
-      overwriteprotocol = "https"; # Tell Nextcloud it's accessed via HTTPS
-      trusted_proxies = [ "127.0.0.1" ]; # Nginx is proxying from localhost
-      trusted_domains = [
-        nextcloudHostname
-        nextcloudIpAddress
-      ];
-    };
-    https = false;
-    #datadir = "${nextcloudPath}";
+  #services.nextcloud = {
+    #enable = false;
+    #package = pkgs.nextcloud31;
+    #hostName = nextcloudHostname;
+    #config = {
+      ##adminuser = "admin";
+      #adminpassFile = "/var/nextcloudpass/nextcloud-admin-pass";
+      #dbtype = "pgsql";
+    #};
+    #settings = {
+      #overwritehost = nextcloudHostname; # Tell Nextcloud its external host
+      #overwriteprotocol = "https"; # Tell Nextcloud it's accessed via HTTPS
+      #trusted_proxies = [ "127.0.0.1" ]; # Nginx is proxying from localhost
+      #trusted_domains = [
+        #nextcloudHostname
+        #nextcloudIpAddress
+      #];
+    #};
+    #https = false;
+    ##datadir = "${nextcloudPath}";
 
-    database.createLocally = true;
-    phpOptions = {
-      #"memory_limit" = "1G";
-      "opcache.enable" = "true";
-      "opcache.interned_strings_buffer" = "16";
-      "opcache.memory_consumption" = "128";
-      "opcache.save_comments" = "1";
-      "opcache.revalidate_freq" = "1";
-    };
-    configureRedis = true;
+    #database.createLocally = true;
+    #phpOptions = {
+      ##"memory_limit" = "1G";
+      #"opcache.enable" = "true";
+      #"opcache.interned_strings_buffer" = "16";
+      #"opcache.memory_consumption" = "128";
+      #"opcache.save_comments" = "1";
+      #"opcache.revalidate_freq" = "1";
+    #};
+    #configureRedis = true;
 
-    nginx.recommendedHttpHeaders = true;
-  };
+    #nginx.recommendedHttpHeaders = true;
+  #};
 
   #security.acme = {
   #certs."${nextcloudHostname}".email = "pierrez1984@gmail.com";
@@ -405,41 +476,41 @@ in
   ## useStaging = true;  # Uncomment to use Let's Encrypt's staging environment (for testing)
   #};
 
-  services.nginx = {
-    enable = false;
-    virtualHosts."${nextcloudHostname}" = {
-      #root = "${nextcloudPath}";
-      serverName = "${nextcloudHostname}";
+  #services.nginx = {
+    #enable = false;
+    #virtualHosts."${nextcloudHostname}" = {
+      ##root = "${nextcloudPath}";
+      #serverName = "${nextcloudHostname}";
 
-      #enableACME = true; # Enable automatic SSL certificate from Let's Encrypt
+      ##enableACME = true; # Enable automatic SSL certificate from Let's Encrypt
 
-      sslCertificate = "/etc/nginx/ssl/nextcloud.crt";
-      sslCertificateKey = "/etc/nginx/ssl/nextcloud.key";
-      listen = [
-        {
-          port = 80;
-          addr = "0.0.0.0";
-        } # Listen on all IP addresses for HTTP
-        {
-          port = 443;
-          ssl = true;
-          addr = "0.0.0.0";
-        } # Listen on all IP addresses for HTTPS
-      ];
-      http2 = true;
-      http3 = true;
-      forceSSL = true; # Redirect HTTP to HTTPS
-      locations."/" = {
-        proxyPass = "unix:/run/php/php7.4-fpm.sock|fcgi://localhost";
-        tryFiles = "$uri $uri/ =404";
-        #proxySetHeader = [
-        #"Host $host"
-        #"X-Real-IP $remote_addr"
-        #"X-Forwarded-For $proxy_add_x_forwarded_for"
-        #];
-      };
-    };
-  };
+      #sslCertificate = "/etc/nginx/ssl/nextcloud.crt";
+      #sslCertificateKey = "/etc/nginx/ssl/nextcloud.key";
+      #listen = [
+        #{
+          #port = 80;
+          #addr = "0.0.0.0";
+        #} # Listen on all IP addresses for HTTP
+        #{
+          #port = 443;
+          #ssl = true;
+          #addr = "0.0.0.0";
+        #} # Listen on all IP addresses for HTTPS
+      #];
+      #http2 = true;
+      #http3 = true;
+      #forceSSL = true; # Redirect HTTP to HTTPS
+      #locations."/" = {
+        #proxyPass = "unix:/run/php/php7.4-fpm.sock|fcgi://localhost";
+        #tryFiles = "$uri $uri/ =404";
+        ##proxySetHeader = [
+        ##"Host $host"
+        ##"X-Real-IP $remote_addr"
+        ##"X-Forwarded-For $proxy_add_x_forwarded_for"
+        ##];
+      #};
+    #};
+  #};
 
   # Define a virtual host in Nginx for your Nextcloud instance
   #services.nginx.virtualHosts."${nextcloudHostname}" = {
@@ -479,7 +550,7 @@ in
   #};
 
   services.postgresql = {
-    enable = true;
+    enable = false;
   };
 
   fonts.packages = with pkgs; [
@@ -510,6 +581,12 @@ in
   users.users.py = {
     isNormalUser = true;
     description = "py";
+    group = "users";
+    shell = pkgs.zsh;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINhppLSZ+s+f27ZY7YkDwCQFF5dILpqV9uqj1UmyuPqs py@nixos"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHgx0PpBOGsgLTIQqlxparz3/fAb4vymWzjgtxa0Xod4 py@PY-MAC.local"
+    ];
     extraGroups = [
       "input"
       "evdev"
@@ -522,16 +599,16 @@ in
       "audio"
       "jackaudio"
       "seat"
+      "sambashare"
     ];
     packages = with pkgs; [
     ];
   };
 
+  users.groups.sambashare = { };
   users.users.sambauser = {
     isNormalUser = true;
-    extraGroups = [
-      "wheel"
-    ];
+    group = "sambashare";
     description = "Samba user for local usage.";
   };
 
@@ -581,6 +658,8 @@ in
     libinput
     inxi
     xorg.xev
+    xorg.xauth
+    xclip
     wev
     sxhkd
     libsForQt5.qt5.qtbase
@@ -600,12 +679,14 @@ in
     font-manager
     fontpreview
     php
-    nextcloud-client
     ngrok
 
+    #nextcloud-client
     #sing-box
     #gui-for-singbox
   ];
+  
+  programs.zsh.enable = true;
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
   ];
@@ -629,7 +710,6 @@ in
   # List services that you want to enable:
 
   programs.bandwhich.enable = true;
-  networking.nftables.enable = true;
 
   programs.clash-verge.enable = true;
   services.shadowsocks.enable = false;
@@ -638,7 +718,7 @@ in
   services.xray.enable = false;
   services.mullvad-vpn.enable = false;
 
-  services.dictd.enable = true;
+  services.dictd.enable = false;
 
   services.syncthing = {
     enable = true;

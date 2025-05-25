@@ -1,7 +1,7 @@
 local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
 local lspconfig = require('lspconfig')
 
-vim.lsp.set_log_level("debug")
+vim.lsp.set_log_level("error")
 
 lspconfig.nil_ls.setup({
 	capabilities = lsp_capabilities,

@@ -1,11 +1,8 @@
-iwctl adapter phy0 set-property Powered on
-iwctl device eth0 set-property Powered on
+#!/bin/sh
 
+export XDG_SESSION_TYPE=x11
+export GDK_BACKEND=x11
+exec gnome-session
 
-exec startlxqt &
-
-# (sleep 2 && DISPLAY=:0 systemctl --user start libinput-gestures &) &
-# (sleep 2 && systemctl --user start libinput-gestures && systemctl --user start xremap.service &) &
-(sleep 2 && systemctl --user start libinput-gestures &) &
-
-wait
+#export DESKTOP_SESSION=plasma
+#exec startplasma-x11
