@@ -445,7 +445,13 @@
   };
   programs.home-manager.enable = true;
   programs.sagemath.enable = true;
-  programs.zathura.enable = true;
+  programs.zathura = {
+    enable = true;
+    options = {
+      selection-clipboard = "clipboard";
+    };
+  };
+
   programs.mpv = {
     # mkdir /var/log/mpv && sudo chmod -R u=rwx,g=rwx,o=rwx /var/log/mpv    ### for recent.lua history.log
     enable = true;
