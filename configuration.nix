@@ -229,7 +229,6 @@
       };
 
       "myfiles" = {
-
         path = "/storage/myfiles";
         browseable = "yes";
         "read only" = "no";
@@ -586,6 +585,7 @@
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINhppLSZ+s+f27ZY7YkDwCQFF5dILpqV9uqj1UmyuPqs py@nixos"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHgx0PpBOGsgLTIQqlxparz3/fAb4vymWzjgtxa0Xod4 py@PY-MAC.local"
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoyDQ+L3UX+yMS/ADOP8AtrLlOlHKDsRbvLeahBPuVQ0mW0Eaw0FvluUa0GF0E79lAMfKkAfHru4TdIGhGI/kusYGD63wYritUQuqQmIOGAbAdfckWdVTc9tL6lq7X4WVtIhAC/Fn66aomQgadq1lwFJoJFswipXaKPjEfbt6x7RYpNTTcjjE9goChgT6j6paWvcn/bpWW1sIi7MgijX6eFd0q8bNQW1YyKAGPjQRAiI+awcE3osdGxoFyiM4d5H2vWiMaGjupgyAFkz/OUHgFd5Vl8aCyq4i/NgRSeeqVT780VdY51o6wf5w5/3QO5yMrkoZpGwyzoIuGdS26j2TH py@SC-201207261047"
     ];
     extraGroups = [
       "input"
@@ -680,6 +680,9 @@
     fontpreview
     php
     ngrok
+    gparted
+    pciutils
+    cpu-x
 
     #nextcloud-client
     #sing-box

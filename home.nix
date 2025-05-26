@@ -60,16 +60,16 @@
     ethtool
 
     #gui-for-clash
+    immich-go
     fusuma
-    cpu-x
     proxychains-ng
     redsocks
     iptables
 
     firefox
     google-chrome
-    tor-browser
-    wechat-uos
+    #tor-browser
+    #wechat-uos
     baidupcs-go
     #teams-for-linux
     #rustdesk
@@ -98,7 +98,6 @@
     poppler
     gpick
     telegram-desktop
-    gparted
     #ventoy
     galculator
     qalculate-gtk
