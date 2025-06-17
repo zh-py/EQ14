@@ -67,7 +67,7 @@
     iptables
 
     firefox
-    google-chrome
+    #google-chrome
     #tor-browser
     #wechat-uos
     baidupcs-go
@@ -78,11 +78,12 @@
     peazip
     nomacs
     gimp
+    ocenaudio
     libsForQt5.kio-extras
     libsForQt5.konsole
     libreoffice-qt6
     speedcrunch
-    photoqt
+    #photoqt
     qview
     viewnior
     krusader
@@ -160,7 +161,7 @@
     glances
     bottom
     aria
-    thefuck
+    pay-respects
     rclone
     syncthing
     nil
@@ -173,13 +174,14 @@
     tree-sitter
     tree-sitter-grammars.tree-sitter-python
     texlab
-    spotify
+    #spotify
     spotdl
     lrcget
     #spotube
     vlc
     smplayer
-    ffmpeg_7
+    ffmpeg
+    mkvtoolnix-cli
     conda
     zotero_7
     netcdf
@@ -762,7 +764,6 @@
       theme = "robbyrussell";
       plugins = [
         "git"
-        "thefuck"
         "z"
         "command-not-found"
         "poetry"
@@ -1013,8 +1014,8 @@
       cmp-path
       cmp-cmdline
       cmp-nvim-lua
-      cmp-vsnip
-      vim-vsnip
+      #cmp-vsnip
+      #vim-vsnip
       #friendly-snippets
       cmp-nvim-lsp
       lspkind-nvim

@@ -10,9 +10,9 @@
   ...
 }:
 #let
-  #nextcloudHostname = "nextcloudpy.com"; # Or "YOUR_NIXOS_IP_ADDRESS"
-  #nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
-  #nextcloudPath = "/var/lib/nextcloud";
+#nextcloudHostname = "nextcloudpy.com"; # Or "YOUR_NIXOS_IP_ADDRESS"
+#nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
+#nextcloudPath = "/var/lib/nextcloud";
 #in
 {
   imports = [
@@ -67,30 +67,65 @@
   #SUBSYSTEM=="net", ACTION=="add", KERNEL=="enp2s0", RUN+="${pkgs.ethtool}/bin/ethtool -s %k wol g"
   #'';
 
+  systemd.network = {
+    enable = true;
+    networks."10-enp1s0" = {
+      matchConfig.Name = "enp1s0";
+      address = [ "192.168.124.76/24" ];
+      gateway = [ "192.168.124.1" ];
+      networkConfig = {
+        DHCP = "no";
+        IPv6AcceptRA = false;
+      };
+      linkConfig = {
+        RequiredForOnline = "routable"; # Optional: makes boot wait until this is routable
+      };
+    };
+    links."10-enp1s0" = {
+      matchConfig.Name = "enp1s0";
+      linkConfig.WakeOnLan = "magic";
+    };
+    wait-online.enable = true;
+    wait-online.anyInterface = true;
+  };
+
+  systemd.services.enable-wol = {
+    description = "Enable Wake-on-LAN";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.ethtool}/sbin/ethtool -s enp1s0 wol g";
+    };
+  };
+
   networking = {
     hostName = "NixNAS";
 
+    useNetworkd = true;
+    useDHCP = false;
+
     nftables.enable = true;
-    interfaces = {
-      enp1s0 = {
-        wakeOnLan.enable = true;
-        ipv4.addresses = [
-          {
-            address = "192.168.124.76";
-            prefixLength = 24;
-          }
-        ];
-      };
-      #enp2s0 = {
-      #wakeOnLan.enable = false;
-      #ipv4.addresses = [
-      #{
-      #address = "192.168.124.77";
-      #prefixLength = 24;
-      #}
-      #];
-      #};
-    };
+    #interfaces = {
+    #enp1s0 = {
+    #wakeOnLan.enable = true;
+    #ipv4.addresses = [
+    #{
+    #address = "192.168.124.76";
+    #prefixLength = 24;
+    #}
+    #];
+    #};
+    ##enp2s0 = {
+    ##wakeOnLan.enable = false;
+    ##ipv4.addresses = [
+    ##{
+    ##address = "192.168.124.77";
+    ##prefixLength = 24;
+    ##}
+    ##];
+    ##};
+    #};
 
     defaultGateway = {
       address = "192.168.124.1";
@@ -122,9 +157,9 @@
       ];
     };
 
-    extraHosts = ''
-      192.168.124.15 nextcloud.tailffcc5b.ts.net
-    '';
+    #extraHosts = ''
+    #192.168.124.15 nextcloud.tailffcc5b.ts.net
+    #'';
 
     #proxy = {
     #default = "http://192.168.124.9:10808/";
@@ -160,7 +195,7 @@
     #};
     #};
     networkmanager = {
-      enable = true;
+      enable = false;
       #wifi.backend = "iwd";
       dns = "systemd-resolved";
     };
@@ -199,8 +234,8 @@
   };
 
   systemd.tmpfiles.rules = [
-  #"d /var/log/samba 0755 root root"
-  "d /storage/myfiles 2770 root sambashare"
+    #"d /var/log/samba 0755 root root"
+    "d /storage/myfiles 2770 root sambashare"
   ];
 
   services.samba = {
@@ -316,33 +351,50 @@
   #services.getty.autologinUser = "py";
   #security.polkit.enable = true;
   #security.pam.services.gdm-password.enableGnomeKeyring = true;
-  #programs.seahorse.enable = true;
+  programs.seahorse.enable = true;
+  #services.xserver.windowManager.twm.enable = true;
   services = {
     xserver = {
       enable = true;
       displayManager = {
-        gdm.enable = false;
         startx.enable = true;
       };
-      desktopManager = {
-        gnome = {
-          enable = true;
-        };
-      };
+      desktopManager.xfce.enable = false;
     };
-    displayManager.autoLogin = {
-      enable = false;
-      user = "py";
+    displayManager = {
+      autoLogin = {
+        enable = false;
+        user = "py";
+      };
+      gdm.enable = false;
+      sddm.enable = true;
     };
     desktopManager = {
+      gnome = {
+        enable = true;
+      };
       plasma6 = {
         enable = false;
       };
     };
   };
 
-  services.xrdp.enable = true;
-  services.xrdp.defaultWindowManager = "gnome-session";
+  services.x2goserver.enable = false;
+  services = {
+    xrdp = {
+      enable = true;
+      #defaultWindowManager = "startplasma-x11";
+      defaultWindowManager = "gnome-remote-desktop";
+      openFirewall = true;
+    };
+  };
+
+  services.gnome.gnome-remote-desktop.enable = true;
+  systemd.targets.sleep.enable = true;
+  systemd.targets.suspend.enable = true;
+  systemd.targets.hibernate.enable = false;
+  systemd.targets.hybrid-sleep.enable = false;
+  hardware.graphics.enable = true;
 
   hardware.uinput.enable = true;
 
@@ -432,38 +484,38 @@
   services.tailscale.enable = false;
 
   #services.nextcloud = {
-    #enable = false;
-    #package = pkgs.nextcloud31;
-    #hostName = nextcloudHostname;
-    #config = {
-      ##adminuser = "admin";
-      #adminpassFile = "/var/nextcloudpass/nextcloud-admin-pass";
-      #dbtype = "pgsql";
-    #};
-    #settings = {
-      #overwritehost = nextcloudHostname; # Tell Nextcloud its external host
-      #overwriteprotocol = "https"; # Tell Nextcloud it's accessed via HTTPS
-      #trusted_proxies = [ "127.0.0.1" ]; # Nginx is proxying from localhost
-      #trusted_domains = [
-        #nextcloudHostname
-        #nextcloudIpAddress
-      #];
-    #};
-    #https = false;
-    ##datadir = "${nextcloudPath}";
+  #enable = false;
+  #package = pkgs.nextcloud31;
+  #hostName = nextcloudHostname;
+  #config = {
+  ##adminuser = "admin";
+  #adminpassFile = "/var/nextcloudpass/nextcloud-admin-pass";
+  #dbtype = "pgsql";
+  #};
+  #settings = {
+  #overwritehost = nextcloudHostname; # Tell Nextcloud its external host
+  #overwriteprotocol = "https"; # Tell Nextcloud it's accessed via HTTPS
+  #trusted_proxies = [ "127.0.0.1" ]; # Nginx is proxying from localhost
+  #trusted_domains = [
+  #nextcloudHostname
+  #nextcloudIpAddress
+  #];
+  #};
+  #https = false;
+  ##datadir = "${nextcloudPath}";
 
-    #database.createLocally = true;
-    #phpOptions = {
-      ##"memory_limit" = "1G";
-      #"opcache.enable" = "true";
-      #"opcache.interned_strings_buffer" = "16";
-      #"opcache.memory_consumption" = "128";
-      #"opcache.save_comments" = "1";
-      #"opcache.revalidate_freq" = "1";
-    #};
-    #configureRedis = true;
+  #database.createLocally = true;
+  #phpOptions = {
+  ##"memory_limit" = "1G";
+  #"opcache.enable" = "true";
+  #"opcache.interned_strings_buffer" = "16";
+  #"opcache.memory_consumption" = "128";
+  #"opcache.save_comments" = "1";
+  #"opcache.revalidate_freq" = "1";
+  #};
+  #configureRedis = true;
 
-    #nginx.recommendedHttpHeaders = true;
+  #nginx.recommendedHttpHeaders = true;
   #};
 
   #security.acme = {
@@ -476,39 +528,39 @@
   #};
 
   #services.nginx = {
-    #enable = false;
-    #virtualHosts."${nextcloudHostname}" = {
-      ##root = "${nextcloudPath}";
-      #serverName = "${nextcloudHostname}";
+  #enable = false;
+  #virtualHosts."${nextcloudHostname}" = {
+  ##root = "${nextcloudPath}";
+  #serverName = "${nextcloudHostname}";
 
-      ##enableACME = true; # Enable automatic SSL certificate from Let's Encrypt
+  ##enableACME = true; # Enable automatic SSL certificate from Let's Encrypt
 
-      #sslCertificate = "/etc/nginx/ssl/nextcloud.crt";
-      #sslCertificateKey = "/etc/nginx/ssl/nextcloud.key";
-      #listen = [
-        #{
-          #port = 80;
-          #addr = "0.0.0.0";
-        #} # Listen on all IP addresses for HTTP
-        #{
-          #port = 443;
-          #ssl = true;
-          #addr = "0.0.0.0";
-        #} # Listen on all IP addresses for HTTPS
-      #];
-      #http2 = true;
-      #http3 = true;
-      #forceSSL = true; # Redirect HTTP to HTTPS
-      #locations."/" = {
-        #proxyPass = "unix:/run/php/php7.4-fpm.sock|fcgi://localhost";
-        #tryFiles = "$uri $uri/ =404";
-        ##proxySetHeader = [
-        ##"Host $host"
-        ##"X-Real-IP $remote_addr"
-        ##"X-Forwarded-For $proxy_add_x_forwarded_for"
-        ##];
-      #};
-    #};
+  #sslCertificate = "/etc/nginx/ssl/nextcloud.crt";
+  #sslCertificateKey = "/etc/nginx/ssl/nextcloud.key";
+  #listen = [
+  #{
+  #port = 80;
+  #addr = "0.0.0.0";
+  #} # Listen on all IP addresses for HTTP
+  #{
+  #port = 443;
+  #ssl = true;
+  #addr = "0.0.0.0";
+  #} # Listen on all IP addresses for HTTPS
+  #];
+  #http2 = true;
+  #http3 = true;
+  #forceSSL = true; # Redirect HTTP to HTTPS
+  #locations."/" = {
+  #proxyPass = "unix:/run/php/php7.4-fpm.sock|fcgi://localhost";
+  #tryFiles = "$uri $uri/ =404";
+  ##proxySetHeader = [
+  ##"Host $host"
+  ##"X-Real-IP $remote_addr"
+  ##"X-Forwarded-For $proxy_add_x_forwarded_for"
+  ##];
+  #};
+  #};
   #};
 
   # Define a virtual host in Nginx for your Nextcloud instance
@@ -597,6 +649,7 @@
       "ydotool"
       "deluge"
       "audio"
+      "video"
       "jackaudio"
       "seat"
       "sambashare"
@@ -663,6 +716,7 @@
     wev
     sxhkd
     libsForQt5.qt5.qtbase
+    gnome-remote-desktop
     kdePackages.qtbase
     kdePackages.kglobalacceld
     kdePackages.kglobalaccel
@@ -679,16 +733,17 @@
     font-manager
     fontpreview
     php
-    ngrok
     gparted
     pciutils
     cpu-x
 
+    xorg.xorgserver
+    #ngrok
     #nextcloud-client
     #sing-box
     #gui-for-singbox
   ];
-  
+
   programs.zsh.enable = true;
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
@@ -714,7 +769,13 @@
 
   programs.bandwhich.enable = true;
 
-  programs.clash-verge.enable = true;
+  programs.clash-verge = {
+    enable = true;
+    autoStart = true;
+    tunMode = true;
+    serviceMode = true;
+  };
+
   services.shadowsocks.enable = false;
   services.v2raya.enable = true;
   services.v2ray.enable = false;
@@ -734,6 +795,7 @@
     enable = true;
     declarative = true;
     user = "py";
+    group = "sambashare";
     dataDir = "/home/py";
     openFirewall = true;
     authFile =
@@ -747,6 +809,10 @@
       deluge_auth_file;
     config = {
       allow_remote = true;
+      download_location = "/storage/myfiles/movies/";
+      max_active_limit = 15;
+      max_active_downloading = 15;
+      max_active_seeding = 10;
     };
   };
 
