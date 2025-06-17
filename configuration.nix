@@ -366,8 +366,8 @@
         enable = false;
         user = "py";
       };
-      gdm.enable = false;
-      sddm.enable = true;
+      gdm.enable = true;
+      sddm.enable = false;
     };
     desktopManager = {
       gnome = {
