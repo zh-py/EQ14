@@ -351,11 +351,11 @@
   #services.getty.autologinUser = "py";
   #security.polkit.enable = true;
   #security.pam.services.gdm-password.enableGnomeKeyring = true;
-  programs.seahorse.enable = true;
+  programs.seahorse.enable = false;
   #services.xserver.windowManager.twm.enable = true;
   services = {
     xserver = {
-      enable = true;
+      enable = false;
       displayManager = {
         startx.enable = true;
       };
@@ -366,15 +366,15 @@
         enable = false;
         user = "py";
       };
-      gdm.enable = true;
+      gdm.enable = false;
       sddm.enable = false;
     };
     desktopManager = {
       gnome = {
-        enable = true;
+        enable = false;
       };
       plasma6 = {
-        enable = false;
+        enable = true;
       };
     };
   };
@@ -383,15 +383,37 @@
   services = {
     xrdp = {
       enable = true;
-      #defaultWindowManager = "startplasma-x11";
-      defaultWindowManager = "gnome-remote-desktop";
+      defaultWindowManager = "startplasma-x11";
       openFirewall = true;
+      #extraConfDirCommands = ''
+      #cat <<EOF > $out/custom-globals.ini
+      #[Globals]
+      #ListenAddress=0.0.0.0
+      #EnableSyslog=true
+      #EnableConsole=false
+      #MaxSessions=10
+
+      #[Xvnc]
+      #name=Xvnc
+      #lib=libvnc.so
+      #username=ask
+      #password=ask
+      #ip=127.0.0.1
+      #port=-1
+      #code=20
+      #EOF
+
+      ##cat <<EOF > $out/custom-sesman.ini
+      ##[Sessions]
+      ##X11DisplayOffset=20
+      ##EOF
+      #'';
     };
   };
 
-  services.gnome.gnome-remote-desktop.enable = true;
-  systemd.targets.sleep.enable = true;
-  systemd.targets.suspend.enable = true;
+  #services.gnome.gnome-remote-desktop.enable = true;
+  systemd.targets.sleep.enable = false;
+  systemd.targets.suspend.enable = false;
   systemd.targets.hibernate.enable = false;
   systemd.targets.hybrid-sleep.enable = false;
   hardware.graphics.enable = true;
@@ -738,6 +760,8 @@
     cpu-x
 
     xorg.xorgserver
+    wayvnc
+    tigervnc
     #ngrok
     #nextcloud-client
     #sing-box
