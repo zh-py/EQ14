@@ -67,7 +67,7 @@
     iptables
 
     firefox
-    #google-chrome
+    google-chrome
     #tor-browser
     #wechat-uos
     baidupcs-go
@@ -445,7 +445,7 @@
     ];
   };
   programs.home-manager.enable = true;
-  programs.sagemath.enable = true;
+  programs.sagemath.enable = false;
   programs.zathura = {
     enable = true;
     options = {

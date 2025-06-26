@@ -142,6 +142,10 @@
         139 # samba
         445 # samba
         3389 # XRDP
+        #28981 # paperless-ngx
+        7878 # radarr
+        8989 # sonarr
+        9696 # prowlarr
       ];
       allowedUDPPorts = [
         2283
@@ -154,6 +158,7 @@
         "wlo1"
         "enp1s0"
         "enp2s0"
+        "tailscale0"
       ];
     };
 
@@ -254,7 +259,7 @@
         "workgroup" = "WORKGROUP";
         "server string" = "smbnix";
         "netbios name" = "smbnix";
-        "hosts allow" = "192.168.124. 127.0.0.1 localhost";
+        "hosts allow" = "192.168.124. 100.64.0.0/10 127.0.0.1 localhost";
         "hosts deny" = "0.0.0.0/0";
         "guest account" = "nobody";
         "map to guest" = "never";
@@ -287,25 +292,31 @@
   virtualisation.docker = {
     enable = true;
 
-    daemon.settings = {
-      # Use port 20172 for HTTP protocol with "Rule of Splitting Traffic"
-      "http-proxy" = "http://127.0.0.1:20172";
-      "https-proxy" = "http://127.0.0.1:20172";
-      # It's important to tell Docker not to proxy internal Docker network traffic.
-      # 172.17.0.0/16 is the default Docker bridge.
-      # 172.20.0.0/16 is the range for 'nextcloud-aio' network in your compose.yml.
-      "no-proxy" = "localhost,127.0.0.1,172.17.0.0/16,172.20.0.0/16";
-    };
     rootless = {
       enable = true;
       setSocketVariable = true;
     };
-    daemon.settings = {
-      dns = [
-        "8.8.8.8"
-        "1.1.1.1"
-      ];
+
+    autoPrune = {
+      enable = true;
+      dates = "weekly";
     };
+
+    daemon.settings = {
+      ## Use port 20172 for HTTP protocol with "Rule of Splitting Traffic"
+      #"http-proxy" = "http://127.0.0.1:20172";
+      #"https-proxy" = "http://127.0.0.1:20172";
+      ## It's important to tell Docker not to proxy internal Docker network traffic.
+      ## 172.17.0.0/16 is the default Docker bridge.
+      ## 172.20.0.0/16 is the range for 'nextcloud-aio' network in your compose.yml.
+      #"no-proxy" = "localhost,127.0.0.1,172.17.0.0/16,172.20.0.0/16";
+    };
+    #daemon.settings = {
+    #dns = [
+    #"8.8.8.8"
+    #"1.1.1.1"
+    #];
+    #};
   };
 
   time.timeZone = "Asia/Shanghai";
@@ -348,7 +359,7 @@
   services.haveged.enable = true;
   programs.dconf.enable = true;
 
-  #services.getty.autologinUser = "py";
+  services.getty.autologinUser = "py";
   #security.polkit.enable = true;
   #security.pam.services.gdm-password.enableGnomeKeyring = true;
   programs.seahorse.enable = false;
@@ -412,11 +423,57 @@
   };
 
   #services.gnome.gnome-remote-desktop.enable = true;
-  systemd.targets.sleep.enable = false;
-  systemd.targets.suspend.enable = false;
-  systemd.targets.hibernate.enable = false;
+
+  security.sudo.extraRules = [
+    {
+      users = [ "py" ];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/poweroff";
+          options = [ "NOPASSWD" ];
+        }
+        {
+          command = "/run/current-system/sw/bin/systemctl suspend";
+          options = [ "NOPASSWD" ];
+        }
+        {
+          command = "/run/current-system/sw/bin/systemctl sleep";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
+
+  systemd.targets.sleep.enable = true;
+  systemd.targets.suspend.enable = true;
+  systemd.targets.hibernate.enable = true;
   systemd.targets.hybrid-sleep.enable = false;
   hardware.graphics.enable = true;
+
+  power.ups = {
+    enable = true;
+    mode = "standalone";
+
+    ups."myups" = {
+      driver = "usbhid-ups";
+      port = "auto";
+      description = "My NAS UPS";
+      directives = [
+        "override.ups.delay.shutdown = 300"
+      ];
+    };
+
+    upsmon.monitor."myups" = {
+      system = "myups@localhost";
+      user = "py";
+      type = "master";
+    };
+
+    users."py" = {
+      upsmon = "primary";
+      passwordFile = "/home/py/.config/secrets/nut-password";
+    };
+  };
 
   hardware.uinput.enable = true;
 
@@ -503,7 +560,7 @@
     };
   };
 
-  services.tailscale.enable = false;
+  services.tailscale.enable = true;
 
   #services.nextcloud = {
   #enable = false;
@@ -659,6 +716,7 @@
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINhppLSZ+s+f27ZY7YkDwCQFF5dILpqV9uqj1UmyuPqs py@nixos"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHgx0PpBOGsgLTIQqlxparz3/fAb4vymWzjgtxa0Xod4 py@PY-MAC.local"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICkvTueVFGc4JKPKnlWQG6V8RCa5wR/Wbp93yRe8umDK py@pixel8"
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoyDQ+L3UX+yMS/ADOP8AtrLlOlHKDsRbvLeahBPuVQ0mW0Eaw0FvluUa0GF0E79lAMfKkAfHru4TdIGhGI/kusYGD63wYritUQuqQmIOGAbAdfckWdVTc9tL6lq7X4WVtIhAC/Fn66aomQgadq1lwFJoJFswipXaKPjEfbt6x7RYpNTTcjjE9goChgT6j6paWvcn/bpWW1sIi7MgijX6eFd0q8bNQW1YyKAGPjQRAiI+awcE3osdGxoFyiM4d5H2vWiMaGjupgyAFkz/OUHgFd5Vl8aCyq4i/NgRSeeqVT780VdY51o6wf5w5/3QO5yMrkoZpGwyzoIuGdS26j2TH py@SC-201207261047"
     ];
     extraGroups = [
@@ -757,6 +815,7 @@
     php
     gparted
     pciutils
+    usbutils
     cpu-x
 
     xorg.xorgserver
@@ -807,6 +866,18 @@
   services.mullvad-vpn.enable = false;
 
   services.dictd.enable = false;
+
+  services.paperless.enable = false;
+
+  services.radarr = {
+    enable = false;
+  };
+  services.sonarr = {
+    enable = false;
+  };
+  services.prowlarr = {
+    enable = false;
+  };
 
   services.syncthing = {
     enable = true;
