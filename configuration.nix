@@ -459,7 +459,8 @@
       port = "auto";
       description = "My NAS UPS";
       directives = [
-        "override.ups.delay.shutdown = 300"
+        "override.ups.delay.shutdown = 3600"
+        "override.ups.delay.start = 120"
       ];
     };
 
@@ -718,6 +719,7 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHgx0PpBOGsgLTIQqlxparz3/fAb4vymWzjgtxa0Xod4 py@PY-MAC.local"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICkvTueVFGc4JKPKnlWQG6V8RCa5wR/Wbp93yRe8umDK py@pixel8"
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoyDQ+L3UX+yMS/ADOP8AtrLlOlHKDsRbvLeahBPuVQ0mW0Eaw0FvluUa0GF0E79lAMfKkAfHru4TdIGhGI/kusYGD63wYritUQuqQmIOGAbAdfckWdVTc9tL6lq7X4WVtIhAC/Fn66aomQgadq1lwFJoJFswipXaKPjEfbt6x7RYpNTTcjjE9goChgT6j6paWvcn/bpWW1sIi7MgijX6eFd0q8bNQW1YyKAGPjQRAiI+awcE3osdGxoFyiM4d5H2vWiMaGjupgyAFkz/OUHgFd5Vl8aCyq4i/NgRSeeqVT780VdY51o6wf5w5/3QO5yMrkoZpGwyzoIuGdS26j2TH py@SC-201207261047"
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCcfiSyRLzAD1I3tAVslYs/5z+Wb4EXsBRpgEw23helXAq0L5j8GDZv9hMHaCtVX9O0xM6+9cdMaLae9nnOcPHWom1QblH87sXUzVI3jBN5JOmoZ6Fc6t1tly2qmB+6ZuTGSodqmFRxnps2T+s10LRI4FXin987JeSx483gbuJxiO4fW9Pg3mKyHMk/wT2A/ldqSIYfYZqQVy9/dU5MeShdTe3SLyu9gQyxe+ySa4pHABS9JK9gsb3HQ+oujpVG+pfwjQjohth+8gGfJizOJJJ9OUJKtdFRr/YkUeAIaDPM8Mnm2cW2G2PhXvLGtQG1MqvUxadVAPOct65JOdvYHNiJ ConnectBot@Pixel8"
     ];
     extraGroups = [
       "input"
