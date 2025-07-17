@@ -78,7 +78,7 @@
     peazip
     nomacs
     gimp
-    ocenaudio
+    #ocenaudio
     libsForQt5.kio-extras
     libsForQt5.konsole
     libreoffice-qt6
@@ -167,6 +167,7 @@
     nil
     nixfmt-rfc-style
     pyright
+    poetry
     ruff
     luajitPackages.luacheck
     lua-language-server
@@ -772,6 +773,11 @@
         "systemadmin"
       ];
     };
+  };
+
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
   };
 
   programs.neovim = {

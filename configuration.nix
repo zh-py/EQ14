@@ -63,11 +63,71 @@
     HibernateDelaySec=1h
   '';
 
-  #services.udev.extraRules = ''
-  #SUBSYSTEM=="net", ACTION=="add", KERNEL=="enp2s0", RUN+="${pkgs.ethtool}/bin/ethtool -s %k wol g"
-  #'';
+  ##services.udev.extraRules = ''
+  ##SUBSYSTEM=="net", ACTION=="add", KERNEL=="enp2s0", RUN+="${pkgs.ethtool}/bin/ethtool -s %k wol g"
+  ##'';
+  ## Use NetworkManager to manage all network interfaces. It's easier for Wi-Fi.
+  #networking.networkmanager.enable = true;
+  ## Disable other network managers to avoid conflicts.
+  #networking.useNetworkd = false;
+  #services.connman.enable = false;
+  #systemd.network.enable = false;
 
-  systemd.network = {
+
+  ## Enable wireless support. NetworkManager will handle this.
+  ##networking.wireless.enable = true;
+
+  ## Add the firmware for your Intel Wi-Fi card
+  ##hardware.firmware = [
+    ##(pkgs.linuxPackages.iwlwifi-firmware)
+  ##];
+
+
+  ## Statically configure your wired ethernet connection using NetworkManager
+  ## This replaces your systemd-networkd configuration.
+  #networking.networkmanager.ensureProfiles.profiles = {
+    #"enp1s0-static" = {
+      #connection.id = "enp1s0-static";
+      #connection.type = "ethernet";
+      #connection.interface-name = "enp1s0";
+      #connection.autoconnect = true;
+      #ipv4 = {
+        #method = "manual";
+        #addresses = [ { address = "192.168.124.76"; prefix = "24"; } ];
+        #gateway = "192.168.124.1";
+        #dns = [ "8.8.8.8" "1.1.1.1" ];
+      #};
+      #"main" = {
+        #wake-on-lan = "magic";
+      #};
+    #};
+  #};
+
+
+  ## Your existing hostname, firewall, and nameserver settings are fine
+  #networking.hostName = "NixNAS";
+  #networking.firewall = {
+    #enable = true;
+    #allowPing = true;
+    #allowedTCPPorts = [
+      #2283 56789 3478 139 445 3389 7878 8989 9696
+    #];
+    #allowedUDPPorts = [
+      #2283 3478 137 138
+    #];
+    #trustedInterfaces = [
+      #"tun0" "wlo1" "enp1s0" "enp2s0" "tailscale0"
+    #];
+  #};
+  #networking.nameservers = [
+    #"1.1.1.1"
+    #"8.8.8.8"
+  #];
+  #services.resolved.enable = true; # Keep systemd-resolved for DNS
+
+
+
+  systemd.network = { #162 lines
     enable = true;
     networks."10-enp1s0" = {
       matchConfig.Name = "enp1s0";
@@ -99,11 +159,21 @@
     };
   };
 
+  services.connman = {
+    enable = true;
+    wifi.backend = "wpa_supplicant";
+    networkInterfaceBlacklist = [ "enp1s0" ];
+  };
+
   networking = {
     hostName = "NixNAS";
 
     useNetworkd = true;
-    useDHCP = false;
+    #useDHCP = true;
+    wireless = {
+      userControlled.enable = true;
+      enable = true;
+    };
 
     nftables.enable = true;
     #interfaces = {
@@ -459,7 +529,7 @@
       port = "auto";
       description = "My NAS UPS";
       directives = [
-        "override.ups.delay.shutdown = 3600"
+        "override.ups.delay.shutdown = 1800"
         "override.ups.delay.start = 120"
       ];
     };
