@@ -316,7 +316,11 @@
 
   systemd.tmpfiles.rules = [
     #"d /var/log/samba 0755 root root"
-    "d /storage/myfiles 2770 root sambashare"
+    "d /storage/myfiles 0771 root sambashare"
+    "d /storage/myfiles/movies 0755 root moviegroup"
+    # ADD THIS LINE: It ensures the directory for Samba's private data has the
+    # correct, highly restrictive permissions that the daemon expects.
+    #"d /var/lib/samba/private 0700 root root -"
   ];
 
   services.samba = {
@@ -342,20 +346,29 @@
         "name resolve order" = "bcast host";
         "min protocol" = "SMB2";
         "max protocol" = "SMB3";
+        "host msdfs" = "no";
       };
 
       "myfiles" = {
         path = "/storage/myfiles";
         browseable = "yes";
         "read only" = "no";
-        "guest ok" = "yes";
-        "create mask" = "0660";
-        "directory mask" = "2770";
-        #"create mask" = "0644";
-        #"directory mask" = "0755";
-        "force user" = "sambauser";
-        "force group" = "sambashare";
+        "guest ok" = "no";
+        "create mask" = "0664"; # Was 0660.  (rw-rw-r--)
+        "directory mask" = "0775"; # Was 0770.  (rwxrwxr-x)
+        #"force user" = "sambauser";
+        #"force group" = "sambashare";
         #"valid users" = [ "@sambashare" ]; #can't turn on!!!!why?????
+        "valid users" = "@sambashare";
+      };
+
+      "movies" = {
+        path = "/storage/myfiles/movies";
+        browseable = "yes";
+        "read only" = "yes";
+        "guest ok" = "no";
+        #"valid users" = "movie";
+        "valid users" = "@moviegroup";
       };
     };
   };
@@ -823,6 +836,13 @@
     description = "Samba user for local usage.";
   };
 
+  users.groups.moviegroup = { };
+  users.users.movie = {
+    isNormalUser = true;
+    group = "moviegroup";
+    description = "Read-only movie user for Samba";
+  };
+
   nixpkgs.config.allowUnfree = true;
 
   nixpkgs.config.packageOverrides = pkgs: {
@@ -903,6 +923,8 @@
     #nextcloud-client
     #sing-box
     #gui-for-singbox
+    apparmor-bin-utils
+    policycoreutils
   ];
 
   programs.zsh.enable = true;
