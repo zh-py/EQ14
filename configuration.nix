@@ -26,7 +26,8 @@
   ];
   #nix.settings.substituters = lib.mkBefore [ "https://mirror.sjtu.edu.cn/nix-channels/store" "https://mirrors.ustc.edu.cn/nix-channels/store" "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store" ];
 
-  systemd.extraConfig = "DefaultLimitNOFILE=4096";
+  #systemd.extraConfig = "DefaultLimitNOFILE=4096";
+
   nix.gc = {
     automatic = true;
     dates = "weekly";
