@@ -295,6 +295,9 @@
         "enp2s0"
         "tailscale0"
       ];
+      extraForwardRules = ''
+        ip protocol udp udp dport 443 reject
+      '';
       #extraCommands = ''
       #iptables -A OUTPUT -j ACCEPT
       #'';
@@ -818,7 +821,7 @@
     };
   };
 
-  services.tailscale.enable = false;
+  services.tailscale.enable = true;
   services.tailscale.extraUpFlags = [ "--accept-dns=false" ];
 
   #services.nextcloud = {
