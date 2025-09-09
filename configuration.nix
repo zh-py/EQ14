@@ -51,10 +51,10 @@
     kernelModules = [ "tun" ];
   };
 
-  services.logind.extraConfig = ''
-    HandlePowerKey=suspend
-    HandlePowerKeyLongPress=poweroff
-  '';
+  #services.logind.extraConfig = ''
+  #HandlePowerKey=suspend
+  #HandlePowerKeyLongPress=poweroff
+  #'';
 
   systemd.sleep.extraConfig = ''
     AllowSuspend=yes
@@ -123,34 +123,34 @@
   #];
   #services.resolved.enable = true; # Keep systemd-resolved for DNS
 
-  systemd.network = {
-    # 162 lines
-    enable = true;
-    networks."10-enp1s0" = {
-      matchConfig.Name = "enp1s0";
-      address = [ "192.168.124.76/24" ];
-      gateway = [ "192.168.124.1" ];
-      networkConfig = {
-        DHCP = "no";
-        IPv6AcceptRA = false;
-      };
-      routes = [
-        {
-          Gateway = "192.168.124.1";
-          Metric = 50;
-        }
-      ];
-      linkConfig = {
-        RequiredForOnline = "routable"; # Optional: makes boot wait until this is routable
-      };
-    };
-    links."10-enp1s0" = {
-      matchConfig.Name = "enp1s0";
-      linkConfig.WakeOnLan = "magic";
-    };
-    wait-online.enable = true;
-    wait-online.anyInterface = true;
-  };
+  #systemd.network = {
+  ## 162 lines
+  #enable = true;
+  #networks."10-enp1s0" = {
+  #matchConfig.Name = "enp1s0";
+  #address = [ "192.168.124.76/24" ];
+  #gateway = [ "192.168.124.1" ];
+  #networkConfig = {
+  #DHCP = "no";
+  #IPv6AcceptRA = false;
+  #};
+  #routes = [
+  #{
+  #Gateway = "192.168.124.1";
+  #Metric = 50;
+  #}
+  #];
+  #linkConfig = {
+  #RequiredForOnline = "routable"; # Optional: makes boot wait until this is routable
+  #};
+  #};
+  #links."10-enp1s0" = {
+  #matchConfig.Name = "enp1s0";
+  #linkConfig.WakeOnLan = "magic";
+  #};
+  #wait-online.enable = true;
+  #wait-online.anyInterface = true;
+  #};
 
   systemd.services.enable-wol = {
     description = "Enable Wake-on-LAN";
@@ -163,19 +163,24 @@
   };
 
   services.connman = {
-    enable = true;
+    enable = false;
     wifi.backend = "wpa_supplicant";
-    networkInterfaceBlacklist = [ "enp1s0" ];
+    networkInterfaceBlacklist = [
+      "enp1s0"
+      "enp2s0"
+    ];
     extraConfig = ''
       [General]
       PreferredTechnologies=ethernet,wifi
     '';
   };
 
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1; # -- [ACTION: ADD THIS LINE]
+
   networking = {
     hostName = "NixNAS";
 
-    useNetworkd = true;
+    useNetworkd = false;
     #useDHCP = true;
     wireless = {
       userControlled.enable = true;
@@ -183,6 +188,54 @@
     };
 
     nftables.enable = true;
+    interfaces = {
+      "enp1s0" = {
+        useDHCP = true;
+        wakeOnLan.enable = true;
+      };
+
+      # This is your LAN interface, connected to your Wi-Fi ROUTER.
+      # This is the new internal network. Your Wi-Fi router and devices will be on 192.168.2.x
+      "enp2s0" = {
+        # ----------------- [ACTION: ADD THIS NEW INTERFACE]
+        ipv4.addresses = [
+          {
+            address = "192.168.2.1"; # This is the gateway address for your router
+            prefixLength = 24;
+          }
+        ];
+      };
+    };
+
+    nat = {
+      # ------------------------------------------ [ACTION: ADD THIS ENTIRE BLOCK]
+      enable = true;
+      internalInterfaces = [ "enp2s0" ]; # Traffic from your LAN...
+      externalInterface = "enp1s0"; # ...will go out through your WAN.
+      #forwardPorts = [
+      #{
+      #sourcePort = 53;
+      #proto = "udp";
+      #destination = "192.168.2.1:53";
+      #}
+      #{
+      #sourcePort = 53;
+      #proto = "tcp";
+      #destination = "192.168.2.1:53";
+      #}
+      #{
+      #sourcePort = 53;
+      #proto = "udp";
+      #destination = "[::1]:53";
+      #}
+      #{
+      #sourcePort = 53;
+      #proto = "tcp";
+      #destination = "[::1]:53";
+      #}
+      #];
+    };
+
     #interfaces = {
     #enp1s0 = {
     #wakeOnLan.enable = true;
@@ -204,14 +257,15 @@
     ##};
     #};
 
-    defaultGateway = {
-      address = "192.168.124.1";
-      interface = "enp1s0";
-    };
+    #defaultGateway = {
+    #address = "192.168.124.1";
+    #interface = "enp1s0";
+    #};
 
     firewall = {
       enable = true;
       allowPing = true;
+      checkReversePath = false;
       allowedTCPPorts = [
         2283
         56789
@@ -223,8 +277,11 @@
         7878 # radarr
         8989 # sonarr
         9696 # prowlarr
+        53 # DNS
       ];
       allowedUDPPorts = [
+        53 # DNS
+        67 # DHCP
         2283
         3478
         137 # samba
@@ -232,11 +289,18 @@
       ]; # 2283:immich 3478 8080 8443 nextcloud
       trustedInterfaces = [
         "tun0"
+        "Mihomo"
         "wlo1"
         "enp1s0"
         "enp2s0"
         "tailscale0"
       ];
+      #extraCommands = ''
+      #iptables -A OUTPUT -j ACCEPT
+      #'';
+      #extraStopCommands = ''
+      #iptables -D OUTPUT -j ACCEPT || true
+      #'';
     };
 
     #extraHosts = ''
@@ -255,9 +319,14 @@
     #};
     nameservers = [
       "127.0.0.1"
-      "8.8.8.8"
-      "1.1.1.1"
+      #"192.168.2.1"
+      #"8.8.8.8"
+      #"1.1.1.1"
     ];
+    #nameservers = [
+    #"9.9.9.9"
+    #"149.112.112.112"
+    #];
 
     #wireless = {
     #iwd = {
@@ -279,16 +348,110 @@
     networkmanager = {
       enable = false;
       #wifi.backend = "iwd";
-      dns = "systemd-resolved";
+      #dns = "systemd-resolved";
+      dns = "none";
     };
   };
 
-  services.resolved = {
+  services.kea.dhcp4 = {
+    # ---------------- [ACTION: USE THIS CORRECTED BLOCK]
+    enable = false;
+    settings = {
+      # Specifies which network interfaces Kea should listen on.
+      interfaces-config = {
+        interfaces = [ "enp2s0" ];
+      };
+
+      # Configures where lease information is stored.
+      # "memfile" is simplest for this use case.
+      lease-database = {
+        type = "memfile";
+        #persist = true;
+        #name = "/var/lib/kea/dhcp4.leases";
+        #lfc-interval = 3600;
+      };
+
+      #valid-lifetime = 4000;
+      #renew-timer = 1000;
+      #rebind-time = 2000;
+
+      # Defines the IP address range (pool) to assign to clients (your router).
+      subnet4 = [
+        {
+          id = 1;
+          subnet = "192.168.2.0/24";
+
+          #pools = [ { pool = "192.168.2.100 - 192.168.2.200"; } ];
+          pools = [ { pool = "192.168.2.100-192.168.2.200"; } ];
+
+          # Tells the client (your router) what the gateway IP is.
+          option-data = [
+            {
+              name = "routers";
+              data = "192.168.2.1";
+            }
+            {
+              name = "domain-name-servers";
+              data = "192.168.2.1";
+            }
+          ];
+        }
+      ];
+
+    };
+  };
+
+  services.dnsmasq = {
     enable = true;
-    fallbackDns = [
-      "8.8.8.8"
-      "1.1.1.1"
-    ];
+    settings = {
+      ## Listen on localhost and LAN
+      listen-address = [
+        "127.0.0.1"
+        "192.168.2.1"
+      ];
+
+      server = [
+        "9.9.9.9" # Quad9
+        "149.112.112.112" # Quad9 secondary
+        "1.1.1.1" # Cloudflare
+        "8.8.8.8" # Google
+        "127.0.0.1#7897"
+      ];
+      #port = 0;
+      # DHCP range for clients
+      #dhcp-range = [ "192.168.2.100,192.168.2.200,255.255.255.0,24h" ];
+      dhcp-range = [ "192.168.2.100,192.168.2.200,24h" ];
+
+      # Push default gateway & DNS to clients
+      dhcp-option = [
+        "option:router,192.168.2.1"
+        "option:dns-server,192.168.2.1"
+      ];
+      no-resolv = true;
+      domain-needed = true;
+      bogus-priv = true;
+      cache-size = 1000;
+      #no-hosts = false;
+      #expand-hosts = true;
+    };
+  };
+  services.resolved = {
+    enable = false;
+    #fallbackDns = [
+    #"8.8.8.8"
+    #"1.1.1.1"
+    #];
+    #FallbackDNS=1.1.1.1 8.8.8.8
+    #DNS=8.8.8.8 1.1.1.1
+    extraConfig = ''
+      DNS=8.8.8.8 1.1.1.1
+      FallbackDNS=9.9.9.9 149.112.112.112
+      Domains=~.
+      DNSSEC=allow-downgrade
+      DNSStubListener=yes
+      DNSStubListenerExtra=192.168.2.1
+      ResolveUnicastSingleLabel=yes
+    '';
     #fallbackDns = [ "127.0.0.1" ];
     #extraConfig = ''
     #DNS=127.0.0.1
@@ -318,7 +481,8 @@
   systemd.tmpfiles.rules = [
     #"d /var/log/samba 0755 root root"
     "d /storage/myfiles 0771 root sambashare"
-    "d /storage/myfiles/movies 0755 root moviegroup"
+    "d /storage/myfiles/movies 2755 sambauser moviegroup"
+
     # ADD THIS LINE: It ensures the directory for Samba's private data has the
     # correct, highly restrictive permissions that the daemon expects.
     #"d /var/lib/samba/private 0700 root root -"
@@ -340,7 +504,8 @@
         "workgroup" = "WORKGROUP";
         "server string" = "smbnix";
         "netbios name" = "smbnix";
-        "hosts allow" = "192.168.124. 100.64.0.0/10 127.0.0.1 localhost";
+        #"hosts allow" = "192.168.124. 100.64.0.0/10 127.0.0.1 localhost"; #STANDALONE
+        "hosts allow" = "127.0.0.1 192.168.1.0/24 192.168.2.0/24 192.168.124.0/24 100.64.0.0/10"; # ROUTER
         "hosts deny" = "0.0.0.0/0";
         "guest account" = "nobody";
         "map to guest" = "never";
@@ -463,6 +628,7 @@
       desktopManager.xfce.enable = false;
     };
     displayManager = {
+      enable = false;
       autoLogin = {
         enable = false;
         user = "py";
@@ -478,6 +644,7 @@
         enable = true;
       };
     };
+    libinput.enable = true;
   };
 
   services.x2goserver.enable = false;
@@ -651,7 +818,8 @@
     };
   };
 
-  services.tailscale.enable = true;
+  services.tailscale.enable = false;
+  services.tailscale.extraUpFlags = [ "--accept-dns=false" ];
 
   #services.nextcloud = {
   #enable = false;
@@ -825,6 +993,7 @@
       "jackaudio"
       "seat"
       "sambashare"
+      "moviegroup"
     ];
     packages = with pkgs; [
     ];
@@ -834,6 +1003,9 @@
   users.users.sambauser = {
     isNormalUser = true;
     group = "sambashare";
+    extraGroups = [
+      "moviegroup"
+    ];
     description = "Samba user for local usage.";
   };
 
@@ -853,6 +1025,7 @@
   };
 
   environment.systemPackages = with pkgs; [
+    automake
     qjackctl
     libjack2
     jack2
@@ -902,7 +1075,6 @@
     libsForQt5.kglobalaccel
     kdePackages.qttools
     kdePackages.qtmultimedia
-    libsForQt5.breeze-qt5
     libsForQt5.ki18n
     libsForQt5.qt5ct
     kdePackages.ki18n
@@ -916,6 +1088,8 @@
     pciutils
     usbutils
     cpu-x
+    toybox
+    tcpdump
 
     xorg.xorgserver
     wayvnc
@@ -955,10 +1129,29 @@
 
   programs.clash-verge = {
     enable = true;
-    autoStart = true;
+    autoStart = false;
     tunMode = true;
     serviceMode = true;
   };
+  #systemd.services.my-clash-engine = {
+  #enable = true; # This should be implicitly true, but let's be explicit.
+  #description = "Custom Clash Core Engine Service";
+  #wantedBy = [ "multi-user.target" ];
+  #after = [ "network-online.target" ];
+  #serviceConfig = {
+  #Type = "simple";
+  #ExecStart = "${pkgs.clash-verge-rev}/bin/verge-mihomo -f /etc/clash-config.yaml";
+  #Restart = "on-failure";
+  #User = "root";
+  #AmbientCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_BIND_SERVICE" ];
+  #CapabilityBoundingSet = [ "CAP_NET_ADMIN" "CAP_NET_BIND_SERVICE" ];
+  #};
+  #};
+  #systemd.services.clash-verge = {
+  #serviceConfig = {
+  #ExecStart = "${pkgs.clash-verge-rev}/bin/clash-verge-service -d /var/lib/clash-verge-rev";
+  #};
+  #};
 
   services.shadowsocks.enable = false;
   services.v2raya.enable = true;
