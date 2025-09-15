@@ -277,10 +277,14 @@
         7878 # radarr
         8989 # sonarr
         9696 # prowlarr
-        53 # DNS
+        #22000 # Syncthing transfer
+        #22001 # Syncthing transfer (TLS)
+        #21027 # Syncthing discovery
+        #53 # DNS
       ];
       allowedUDPPorts = [
-        53 # DNS
+        #53 # DNS
+        #21027  # Syncthing Discovery
         67 # DHCP
         2283
         3478
@@ -414,11 +418,13 @@
       ];
 
       server = [
-        "9.9.9.9" # Quad9
-        "149.112.112.112" # Quad9 secondary
-        "1.1.1.1" # Cloudflare
-        "8.8.8.8" # Google
-        "127.0.0.1#7897"
+        #"9.9.9.9" # Quad9
+        #"149.112.112.112" # Quad9 secondary
+        #"1.1.1.1" # Cloudflare
+        #"8.8.8.8" # Google
+        #"127.0.0.1#7897"
+        "127.0.0.1#1053"
+        #"9.9.9.9" # Quad9
       ];
       #port = 0;
       # DHCP range for clients
