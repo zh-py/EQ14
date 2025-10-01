@@ -1042,6 +1042,7 @@
     bluez-tools
     pulseaudioFull
 
+    s-tui
     thermald
     powertop
     smartmontools
