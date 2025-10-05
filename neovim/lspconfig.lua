@@ -1,133 +1,171 @@
- local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
-
+local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
 vim.lsp.set_log_level("error")
 
-vim.lsp.config("nil_ls", {
-	capabilities = lsp_capabilities,
-	on_attach = on_attach,
-	settings = {
-		['nil'] = {
-			formatting = {
-				command = { "nixfmt" },
-			},
-		},
-	},
+vim.lsp.config('*', {
+  capabilities = lsp_capabilities,
 })
 
-vim.lsp.config("marksman", {
-	capabilities = lsp_capabilities,
-	on_attach = on_attach,
-})
 
-vim.lsp.config("texlab", {
-	capabilities = lsp_capabilities,
-	on_attach = on_attach,
-})
---require('lspconfig').ds_pinyin_lsp.setup {
---init_options = {
---db_path = "~/Documents/dict.db3"
---}
---}
---
-
-vim.lsp.config("pylsp", {
-	capabilities = lsp_capabilities,
-	on_attach = on_attach,
-	settings = {
-		pylsp = {
-			plugins = {
-				ruff = {
-					enabled = true,         -- Enable the plugin
-					formatEnabled = true,   -- Enable formatting using ruffs formatter
-					executable = "<path-to-ruff-bin>", -- Custom path to ruff
-					config = "<path_to_custom_ruff_toml>", -- Custom config for ruff to use
-					extendSelect = { "I" }, -- Rules that are additionally used by ruff
-					extendIgnore = { "C90" }, -- Rules that are additionally ignored by ruff
-					format = { "I" },       -- Rules that are marked as fixable by ruff that should be fixed when running textDocument/formatting
-					severities = { ["D212"] = "I" }, -- Optional table of rules where a custom severity is desired
-					unsafeFixes = false,    -- Whether or not to offer unsafe fixes as code actions. Ignored with the "Fix All" action
-
-					-- Rules that are ignored when a pyproject.toml or ruff.toml is present:
-					lineLength = 88,                  -- Line length to pass to ruff checking and formatting
-					exclude = { "__about__.py" },     -- Files to be excluded by ruff checking
-					select = { "F" },                 -- Rules to be enabled by ruff
-					ignore = { "D210" },              -- Rules to be ignored by ruff
-					perFileIgnores = { ["__init__.py"] = "CPY001" }, -- Rules that should be ignored for specific files
-					preview = false,                  -- Whether to enable the preview style linting and formatting.
-					targetVersion = "py310",          -- The minimum python version to target (applies for both linting and formatting).
+-- Define all servers and their custom settings
+local servers = {
+	pyright = {
+		cmd = { "pyright-langserver", "--stdio" },
+		filetypes = { "python" },
+		on_attach = function()
+			-- DAP keymaps only for pyright
+			vim.keymap.set('n', '<F4>', function() require('dap').continue() end)
+			vim.keymap.set('n', '<F6>', function() require('dap').restart() end)
+			vim.keymap.set('n', '<F3>', function() require('dap').step_over() end)
+			vim.keymap.set('n', '<F1>', function() require('dap').step_into() end)
+			vim.keymap.set('n', '<F2>', function() require('dap').step_out() end)
+			vim.keymap.set('n', '<leader>s', function() require('dap').terminate() end)
+			vim.keymap.set('n', '<F8>', function() require('dap').toggle_breakpoint() end)
+			vim.keymap.set('n', '<F9>',
+				function() require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: ')) end)
+			vim.keymap.set('n', '<leader>dp', function() require("dap").pause() end)
+			vim.keymap.set('n', '<Leader>lp',
+				function() require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end)
+			vim.keymap.set('n', '<leader>lb', function() require('dap').list_breakpoints() end)
+			vim.keymap.set('n', '<leader>cb', function() require('dap').clear_breakpoints() end)
+			vim.keymap.set('n', '<Leader>dr', function() require('dap').repl.toggle() end)
+			vim.keymap.set("n", "<leader>du", function() require('dapui').toggle() end)
+			vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end)
+			vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function() require('dap.ui.widgets').hover() end)
+			vim.keymap.set({ 'n', 'v' }, '<Leader>dp', function() require('dap.ui.widgets').preview() end)
+			vim.keymap.set({ 'n', 'v' }, '<Leader>de', function() require('dapui').eval() end)
+			vim.keymap.set('n', '<Leader>df', function()
+				local widgets = require('dap.ui.widgets')
+				widgets.centered_float(widgets.frames)
+			end)
+			vim.keymap.set('n', '<Leader>ds', function()
+				local widgets = require('dap.ui.widgets')
+				widgets.centered_float(widgets.scopes)
+			end)
+		end,
+		settings = {
+			pyright = { autoImportCompletion = true },
+			python = {
+				analysis = {
+					autoSearchPaths = true,
+					diagnosticMode = 'workspace',
+					useLibraryCodeForTypes = true,
+					typeCheckingMode = 'basic',
 				},
 			},
 		},
 	},
-})
 
-vim.lsp.config("pyright", {
-	capabilities = lsp_capabilities,
-	on_attach = function()
-		vim.keymap.set('n', '<F4>', function() require('dap').continue() end)
-		vim.keymap.set('n', '<F6>', function() require('dap').restart() end)
-		vim.keymap.set('n', '<F3>', function() require('dap').step_over() end)
-		vim.keymap.set('n', '<F1>', function() require('dap').step_into() end)
-		vim.keymap.set('n', '<F2>', function() require('dap').step_out() end)
-		vim.keymap.set('n', '<leader>s', function() require('dap').terminate() end)
-		vim.keymap.set('n', '<F8>', function() require('dap').toggle_breakpoint() end)
-		vim.keymap.set('n', '<F9>', function() require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: ')) end)
-		vim.keymap.set('n', '<leader>dp', function() require("dap").pause() end)
-		vim.keymap.set('n', '<Leader>lp',
-			function() require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end)
-		vim.keymap.set('n', '<leader>lb', function() require('dap').list_breakpoints() end)
-		vim.keymap.set('n', '<leader>cb', function() require('dap').clear_breakpoints() end)
-		vim.keymap.set('n', '<Leader>dr', function() require('dap').repl.toggle() end)
-		vim.keymap.set("n", "<leader>du", function() require('dapui').toggle() end)
-		vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end)
-		vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function() require('dap.ui.widgets').hover() end)
-		vim.keymap.set({ 'n', 'v' }, '<Leader>dp', function() require('dap.ui.widgets').preview() end)
-		vim.keymap.set({ 'n', 'v' }, '<Leader>de', function() require('dapui').eval() end)
-		vim.keymap.set('n', '<Leader>df',
-			function()
-				local widgets = require('dap.ui.widgets')
-				widgets.centered_float(widgets.frames)
-			end)
-		vim.keymap.set('n', '<Leader>ds',
-			function()
-				local widgets = require('dap.ui.widgets')
-				widgets.centered_float(widgets.scopes)
-			end)
-	end,
-	settings = {
-		pyright = { autoImportCompletion = true, },
-		python = {
-			analysis = {
-				autoSearchPaths = true,
-				diagnosticMode = 'workspace',
-				useLibraryCodeForTypes = true,
-				typeCheckingMode = 'basic'
-			}
-		}
-	}
-})
+	pylsp = {
+		cmd = { 'pylsp' },
+		filetypes = { "python" },
 
-vim.lsp.config("lua_ls", {
-	capabilities = lsp_capabilities,
-	on_attach = function(client)
-		client.server_capabilities.documentFormattingProvider = true
-		client.server_capabilities.documentRangeFormattingProvider = true
-	end,
-	settings = {
-		Lua = {
-			diagnostics = {
-				globals = { 'vim' },
-			},
-			format = {
-				enable = true,
-				defaultConfig = {
-					indent_style = "space",
-					indent_size = "8",
-				}
+		settings = {
+			pylsp = {
+				plugins = {
+					ruff = {
+						enabled = true,
+						formatEnabled = true,
+						executable = "<path-to-ruff-bin>",
+						config = "<path_to_custom_ruff_toml>",
+						extendSelect = { "I" },
+						extendIgnore = { "C90" },
+						format = { "I" },
+						severities = { ["D212"] = "I" },
+						unsafeFixes = false,
+						lineLength = 88,
+						exclude = { "__about__.py" },
+						select = { "F" },
+						ignore = { "D210" },
+						perFileIgnores = { ["__init__.py"] = "CPY001" },
+						preview = false,
+						targetVersion = "py310",
+					},
+				},
 			},
 		},
 	},
-})
+
+	lua_ls = {
+		cmd = { 'lua-language-server' },
+
+		filetypes = { "lua" },
+		on_attach = function(client)
+			client.server_capabilities.documentFormattingProvider = true
+			client.server_capabilities.documentRangeFormattingProvider = true
+		end,
+		settings = {
+			Lua = {
+				diagnostics = { globals = { "vim" } },
+				format = {
+					enable = true,
+					defaultConfig = {
+						indent_style = "space",
+						indent_size = "8",
+					},
+				},
+			},
+		},
+	},
+
+	nil_ls = {
+		cmd = { 'nil' },
+
+		filetypes = { "nix" },
+		settings = {
+			['nil'] = {
+				formatting = { command = { "nixfmt" } },
+			},
+		},
+	},
+
+	marksman = {
+		cmd = { "marksman" },
+		filetypes = { "markdown" }
+	},
+
+	texlab = {
+		cmd = { "texlab" },
+		filetypes = { "tex", "plaintex" }
+	},
+}
+
+for name, config in pairs(servers) do
+  vim.lsp.config(name, config)
+end
+
+-- Enable all servers
+for name, _ in pairs(servers) do
+  vim.lsp.enable(name)
+end
+
+--for name, opts in pairs(servers) do
+	--vim.api.nvim_create_autocmd("FileType", {
+		--pattern = opts.filetypes,
+		--callback = function(ev)
+			---- make sure cmd is defined!
+			--local cfg = vim.tbl_extend("force", {
+				--capabilities = lsp_capabilities,
+			--}, opts)
+
+			--if not cfg.cmd then
+				---- try to infer from system path if possible
+				--local bin = name
+				--if vim.fn.executable(bin) == 1 then
+					--cfg.cmd = { bin }
+				--else
+					--vim.notify("No LSP cmd found for " .. name, vim.log.levels.ERROR)
+					--return
+				--end
+			--end
+
+			--vim.lsp.start(cfg, { bufnr = ev.buf })
+		--end,
+	--})
+--end
+
+
+
+
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions

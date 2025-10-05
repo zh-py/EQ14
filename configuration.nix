@@ -281,6 +281,9 @@
         #22001 # Syncthing transfer (TLS)
         #21027 # Syncthing discovery
         #53 # DNS
+        8123  # Home Assistant
+        8300  # Home Assistant
+        8880  # Zigbee2MQTT
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -480,6 +483,47 @@
       X11Forwarding = true;
       PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
     };
+  };
+
+
+  services.zigbee2mqtt = {
+    enable = true;
+    settings = {
+      homeassistant.enabled = config.services.home-assistant.enable;
+      permit_join = true;
+      serial = {
+    port = "/dev/ttyUSB0";
+        adapter = "ezsp";
+      };
+      mqtt = {
+        server = "mqtt://localhost:1883";
+      };
+      frontend = {
+        port = 8880;
+      };
+    };
+  };
+
+   services.home-assistant = {
+    enable = true;
+    extraComponents = [ "emulated_hue" ];
+    config = {
+      default_config = {};
+      emulated_hue = {
+        listen_port = 8300;
+        expose_by_default = true;
+      };
+    };
+  };
+
+  services.mosquitto = {
+    enable = true;
+    listeners = [{
+      port = 1883;
+      acl = [ "pattern readwrite #" ];
+      omitPasswordAuth = true;
+      settings.allow_anonymous = true;
+    }];
   };
 
   services.immich = {
@@ -1110,6 +1154,8 @@
     #gui-for-singbox
     apparmor-bin-utils
     policycoreutils
+
+    mosquitto
   ];
 
   programs.zsh.enable = true;
