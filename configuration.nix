@@ -281,9 +281,9 @@
         #22001 # Syncthing transfer (TLS)
         #21027 # Syncthing discovery
         #53 # DNS
-        8123  # Home Assistant
-        8300  # Home Assistant
-        8880  # Zigbee2MQTT
+        8123 # Home Assistant
+        8300 # Home Assistant
+        8880 # Zigbee2MQTT
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -485,14 +485,13 @@
     };
   };
 
-
   services.zigbee2mqtt = {
-    enable = true;
+    enable = false;
     settings = {
       homeassistant.enabled = config.services.home-assistant.enable;
       permit_join = true;
       serial = {
-    port = "/dev/ttyUSB0";
+        port = "/dev/ttyUSB0";
         adapter = "ezsp";
       };
       mqtt = {
@@ -504,26 +503,37 @@
     };
   };
 
-   services.home-assistant = {
+  services.home-assistant = {
     enable = true;
-    extraComponents = [ "emulated_hue" ];
+    extraComponents = [
+      "zha"
+      "emulated_hue"
+      "mqtt"
+    ];
     config = {
-      default_config = {};
+      default_config = { };
       emulated_hue = {
         listen_port = 8300;
         expose_by_default = true;
+      };
+      mqtt = {
+        broker = "localhost";
+        port = 1883;
       };
     };
   };
 
   services.mosquitto = {
     enable = true;
-    listeners = [{
-      port = 1883;
-      acl = [ "pattern readwrite #" ];
-      omitPasswordAuth = true;
-      settings.allow_anonymous = true;
-    }];
+    listeners = [
+      {
+        port = 1883;
+        #acl = [ "pattern readwrite #" ];
+        acl = [ "user homeassistant" ]; # Requires user setup
+        omitPasswordAuth = true;
+        settings.allow_anonymous = true;
+      }
+    ];
   };
 
   services.immich = {
@@ -738,6 +748,10 @@
     {
       users = [ "py" ];
       commands = [
+        {
+          command = "/run/current-system/sw/bin/systemctl poweroff";
+          options = [ "NOPASSWD" ];
+        }
         {
           command = "/run/current-system/sw/bin/poweroff";
           options = [ "NOPASSWD" ];
