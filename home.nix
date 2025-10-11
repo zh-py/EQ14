@@ -91,8 +91,6 @@
     xxdiff
     kdePackages.okular
     mupdf
-    pdfarranger
-    llpp
     qpdfview
     poppler
     gpick

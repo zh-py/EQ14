@@ -14,6 +14,21 @@
 #nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
 #nextcloudPath = "/var/lib/nextcloud";
 #in
+#let
+#hacs = pkgs.stdenv.mkDerivation {
+#name = "hacs";
+#src = pkgs.fetchFromGitHub {
+#owner = "hacs";
+#repo = "integration";
+#rev = "2.0.5";
+#sha256 = "sha256-VUGCE2ZcyI9pHqYpEiJMWttYOfuH81QvuwSGMEC0a3o=";
+#};
+#installPhase = ''
+#mkdir -p $out/custom_components/hacs
+#cp -r * $out/custom_components/hacs
+#'';
+#};
+#in
 {
   imports = [
     ./hardware-configuration.nix
@@ -51,10 +66,10 @@
     kernelModules = [ "tun" ];
   };
 
-  #services.logind.extraConfig = ''
-  #HandlePowerKey=suspend
-  #HandlePowerKeyLongPress=poweroff
-  #'';
+  #services.logind.settings.Login = {
+  #HandlepowerKey = "suspend";
+  #HandlepowerKeyLongPress = "reboot";
+  #};
 
   systemd.sleep.extraConfig = ''
     AllowSuspend=yes
@@ -284,6 +299,7 @@
         8123 # Home Assistant
         8300 # Home Assistant
         8880 # Zigbee2MQTT
+        80 # Alexa Philips Hue Bridge V1 (round)
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -293,6 +309,8 @@
         3478
         137 # samba
         138 # samba
+        1900 # UPnP Alexa
+        8300 # Home Assistant
       ]; # 2283:immich 3478 8080 8443 nextcloud
       trustedInterfaces = [
         "tun0"
@@ -485,6 +503,127 @@
     };
   };
 
+  virtualisation.oci-containers = {
+    backend = "docker";
+    containers.homeassistant = {
+      image = "ghcr.io/home-assistant/home-assistant:stable";
+      volumes = [
+        "home-assistant:/config"
+      ];
+      environment.TZ = "Asia/Shanghai";
+      extraOptions = [
+        "--network=host"
+        "--device=/dev/ttyUSB0:/dev/ttyUSB0"
+        "--privileged"
+      ];
+    };
+  };
+  virtualisation.oci-containers.containers.matter-server = {
+    image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
+    volumes = [
+      "matter-server:/data"
+      "/run/dbus:/run/dbus"
+    ];
+    environment = {
+      TZ = "Asia/Shanghai";
+    };
+    extraOptions = [
+      "--network=host"
+    ];
+  };
+  virtualisation.oci-containers.containers.node-red = {
+    image = "nodered/node-red:latest";
+    ports = [ "1880:1880" ];
+    volumes = [ "node-red-data:/data" ];
+    environment = {
+      TZ = "Asia/Shanghai";
+    };
+    extraOptions = [ "--network=host" ];
+  };
+  services.nginx = {
+    enable = false;
+
+    virtualHosts."_" = {
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = 80;
+        }
+      ];
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8123";
+        proxyWebsockets = true;
+        extraConfig = ''
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        '';
+      };
+
+      locations."/description.xml" = {
+        proxyPass = "http://127.0.0.1:8123/description.xml";
+      };
+    };
+  };
+  #services.nginx = {
+  #enable = true;
+  #virtualHosts."_" = {
+  #listen = [
+  #{
+  #addr = "0.0.0.0";
+  #port = 80;
+  #}
+  #];
+
+  #locations."/" = {
+  #proxyPass = "http://127.0.0.1:8123"; # Forward to Home Assistant
+  #proxyWebsockets = true;
+
+  #extraConfig = ''
+  #proxy_set_header Host $host;
+  #proxy_set_header X-Real-IP $remote_addr;
+  #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  #proxy_set_header Upgrade $http_upgrade;
+  #proxy_set_header Connection "upgrade";
+  #'';
+  #};
+  #};
+  #};
+  #services.nginx = {
+  #enable = true;
+  #virtualHosts."_" = {
+  #listen = [
+  #{
+  #addr = "0.0.0.0";
+  #port = 80;
+  #}
+  #];
+  #locations."/" = {
+  #proxyPass = "http://127.0.0.1:8300"; # Forward to HA's port
+  #proxyWebsockets = true;
+  ## The raw Nginx commands go inside the extraConfig string.
+  #extraConfig = ''
+  #proxy_set_header Host $host;
+  #proxy_set_header X-Real-IP $remote_addr;
+  #'';
+  #};
+  #};
+  #};
+  #virtualisation.oci-containers = {
+  ##backend = "podman";
+  #backend = "docker";
+  #containers.homeassistant = {
+  #volumes = [ "home-assistant:/config" ];
+  #environment.TZ = "Asia/Shanghai";
+  #image = "ghcr.io/home-assistant/home-assistant:stable";
+  #extraOptions = [
+  #"--network=host"
+  #];
+  #};
+  #};
+
   services.zigbee2mqtt = {
     enable = false;
     settings = {
@@ -504,12 +643,18 @@
   };
 
   services.home-assistant = {
-    enable = true;
+    enable = false;
     extraComponents = [
       "zha"
       "emulated_hue"
       "mqtt"
     ];
+    customComponents = [
+      #pkgs.home-assistant-custom-components.hacs
+    ];
+    #customComponents = with pkgs.home-assistant-custom-components; [
+    #hacs
+    #];
     config = {
       default_config = { };
       emulated_hue = {
@@ -521,10 +666,22 @@
         port = 1883;
       };
     };
+    #extraPackages =
+    #python3Packages: with python3Packages; [
+    #aiohttp
+    #pyyaml
+    #requests
+    #multidict
+    #yarl
+    #typing-extensions
+    #];
+    #extraPackages =
+    #ps: with ps; [
+    #];
   };
 
   services.mosquitto = {
-    enable = true;
+    enable = false;
     listeners = [
       {
         port = 1883;
@@ -1112,6 +1269,7 @@
     wget
     gsimplecal
     wmctrl
+    unzip
 
     kdePackages.qt6ct
     libsForQt5.qt5ct
@@ -1148,7 +1306,6 @@
     kdePackages.ki18n
     playerctl
     qpwgraph
-    virtualgl
     font-manager
     fontpreview
     php
@@ -1156,6 +1313,8 @@
     pciutils
     usbutils
     cpu-x
+    linuxKernel.packages.linux_6_12.turbostat
+    linuxKernel.packages.linux_6_12.cpupower
     toybox
     tcpdump
 
