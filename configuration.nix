@@ -538,7 +538,10 @@
     environment = {
       TZ = "Asia/Shanghai";
     };
-    extraOptions = [ "--network=host" ];
+    extraOptions = [
+      "--network=host" # Required for SSDP broadcast and port 80 binding
+      "--cap-add=NET_BIND_SERVICE" # Allows binding to privileged ports like 80
+    ];
   };
   services.nginx = {
     enable = false;
@@ -1312,6 +1315,9 @@
     gparted
     pciutils
     usbutils
+    inetutils
+    tcpdump
+    mtr
     cpu-x
     linuxKernel.packages.linux_6_12.turbostat
     linuxKernel.packages.linux_6_12.cpupower

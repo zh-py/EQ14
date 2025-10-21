@@ -556,9 +556,11 @@
 
   programs.git = {
     enable = true;
-    userEmail = "pierrez1984@gmail.com";
-    userName = "zh-py";
-    extraConfig = {
+    settings = {
+      user = {
+        email = "pierrez1984@gmail.com";
+        name = "zh-py";
+      };
       core = {
         editor = "nvim";
         pager = "delta --dark";

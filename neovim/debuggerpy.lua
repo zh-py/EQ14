@@ -1,39 +1,43 @@
 require('dap-python').setup('~/.nix-profile/bin/python3/')
 require('telescope').load_extension('dap')
 require("dapui").setup()
-	local dap, dapui = require("dap"), require("dapui")
-	dap.listeners.before.attach.dapui_config = function()
-		dap.repl.open()
-	end
-	dap.listeners.before.launch.dapui_config = function()
-		dap.repl.open()
-	end
-	--dap.listeners.after.launch.dapui_config = function()
-	--end
-	--dap.listeners.after.event_initialized.dapui_config = function()
-		--os.execute("sleep " .. tonumber(3))
-		--vim.cmd('wincmd J')
-		--vim.cmd('startinsert')
-	--end
-	dap.listeners.before.event_terminated.dapui_config = function()
-		dapui.close()
-		dap.repl.close()
-	end
-	dap.listeners.before.event_exited.dapui_config = function()
-		dapui.close()
-		dap.repl.close()
-	end
+local dap, dapui = require("dap"), require("dapui")
+dap.listeners.before.attach.dapui_config = function()
+	dap.repl.open()
+end
+dap.listeners.before.launch.dapui_config = function()
+	dap.repl.open()
+end
+--dap.listeners.after.launch.dapui_config = function()
+--end
+--dap.listeners.after.event_initialized.dapui_config = function()
+--os.execute("sleep " .. tonumber(3))
+--vim.cmd('wincmd J')
+--vim.cmd('startinsert')
+--end
+dap.listeners.before.event_terminated.dapui_config = function()
+	dapui.close()
+	dap.repl.close()
+end
+dap.listeners.before.event_exited.dapui_config = function()
+	dapui.close()
+	dap.repl.close()
+end
 require("neodev").setup({ library = { plugins = { "nvim-dap-ui" }, types = true }, })
-	local lspconfig = require('lspconfig')
-	lspconfig.lua_ls.setup({
-		settings = {
-			Lua = {
-				completion = {
-					callSnippet = "Replace"
-				}
-			}
+vim.lsp.config('lua_ls', {
+	cmd = { "lua-language-server" },
+	filetypes = { "lua" },
+	settings = {
+		Lua = {
+			completion = {
+				callSnippet = "Replace"
+			},
+			diagnostics = { globals = { "vim" } },
 		}
-	})
+	}
+})
+vim.lsp.enable('lua_ls')
+
 require('nvim-dap-virtual-text').setup()
 
 --below are in lspconfig.lua file, locally activated
