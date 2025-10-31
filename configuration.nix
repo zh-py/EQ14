@@ -502,6 +502,10 @@
       PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
     };
   };
+  programs.mosh = {
+    enable = true;
+    openFirewall = true;
+  };
 
   virtualisation.oci-containers = {
     backend = "docker";
@@ -819,7 +823,7 @@
       waylandFrontend = true;
       addons = with pkgs; [
         fcitx5-gtk
-        fcitx5-chinese-addons
+        qt6Packages.fcitx5-chinese-addons
         fcitx5-pinyin-zhwiki
         fcitx5-nord
       ];
@@ -1177,7 +1181,7 @@
     terminus_font_ttf
     profont
     efont-unicode
-    noto-fonts-emoji
+    noto-fonts-color-emoji
     dina-font
 
     nerd-fonts.fira-code
@@ -1189,9 +1193,8 @@
     source-han-serif
     source-han-sans
 
-    vistafonts
-    ubuntu_font_family
-
+    vista-fonts
+    ubuntu-classic
   ];
 
   users.users.py = {

@@ -47,6 +47,12 @@
   #};
   #};
 
+  #nixpkgs.config.packageOverrides = pkgs: {
+    #maestral = pkgs.maestral.overridePythonAttrs (old: {
+      #doCheck = false;
+    #});
+  #};
+
   home.packages = with pkgs; [
     #nixos only
     #clash-nyanpasu
@@ -65,6 +71,7 @@
     proxychains-ng
     redsocks
     iptables
+    autossh
 
     firefox
     google-chrome
@@ -73,7 +80,7 @@
     baidupcs-go
     #teams-for-linux
     #rustdesk
-    calibre
+    #calibre
     koreader
     peazip
     nomacs
@@ -147,7 +154,7 @@
     htop
     neofetch
     fastfetch
-    du-dust
+    dust
     fd
     ripgrep
     bat
@@ -155,7 +162,7 @@
     fontconfig
     glances
     bottom
-    aria
+    aria2
     pay-respects
     rclone
     syncthing
@@ -742,7 +749,8 @@
       #ys = "(){ yt-dlp --write-sub --write-auto-sub --sub-lang 'en-US,en-GB,en,en.*' --convert-subtitles srt --skip-download $1. ;}";
       #y = "(){ yt-dlp --write-sub --sub-lang 'en.*' --convert-subtitles srt -f '299+140/137+140/136+140/135+140/134+140/299+140-8/299+140-7/299+140-6/299+140-5/299+140-4/299+140-3/299+140-2/299+140-1/137+140-8/137+140-7/137+140-6/137+140-5/137+140-4/137+140-3/137+140-2/137+140-1/136+140-8/136+140-7/136+140-6/136+140-5/136+140-4/136+140-3/136+140-2/136+140-1' --no-mtime $1. ;}";
       #y = "(){ ~/python/yt-dlp --cookies-from-browser firefox -vU --write-sub --sub-lang 'en.*' --convert-subtitles srt -f '299+140/137+140/136+140/135+140/134+140/299+140-12/299+140-11/299+140-10/299+140-9/299+140-8/299+140-7/299+140-6/299+140-5/299+140-4/299+140-3/299+140-2/299+140-1/137+140-12/137+140-11/137+140-10/137+140-9/137+140-8/137+140-7/137+140-6/137+140-5/137+140-4/137+140-3/137+140-2/137+140-1/136+140-10/136+140-9/136+140-8/136+140-7/136+140-6/136+140-5/136+140-4/136+140-3/136+140-2/136+140-1' --no-mtime --no-check-certificate $1. ;}";
-      y = "(){ ~/python/yt-dlp --path /storage/myfiles/youtube --cookies-from-browser firefox -vU --write-sub --sub-lang 'en.*' --convert-subtitles srt -f '299+140/137+140/136+140/135+140/134+140/299+140-12/299+140-11/299+140-10/299+140-9/299+140-8/299+140-7/299+140-6/299+140-5/299+140-4/299+140-3/299+140-2/299+140-1/137+140-12/137+140-11/137+140-10/137+140-9/137+140-8/137+140-7/137+140-6/137+140-5/137+140-4/137+140-3/137+140-2/137+140-1/136+140-12/136+140-11/136+140-10/136+140-9/136+140-8/136+140-7/136+140-6/136+140-5/136+140-4/136+140-3/136+140-2/136+140-1' --no-mtime --no-check-certificate $1. ;}";
+      y = "(){ ~/python/yt-dlp --path /storage/myfiles/youtube --cookies-from-browser firefox -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --no-mtime --merge-output-format mp4 --write-sub --sub-lang 'en.*' --convert-subtitles srt -vU $1. ;}";
+      yo = "(){ ~/python/yt-dlp --path /storage/myfiles/youtube --cookies-from-browser firefox -vU --write-sub --sub-lang 'en.*' --convert-subtitles srt -f '299+140/137+140/136+140/135+140/134+140/299+140-12/299+140-11/299+140-10/299+140-9/299+140-8/299+140-7/299+140-6/299+140-5/299+140-4/299+140-3/299+140-2/299+140-1/137+140-12/137+140-11/137+140-10/137+140-9/137+140-8/137+140-7/137+140-6/137+140-5/137+140-4/137+140-3/137+140-2/137+140-1/136+140-12/136+140-11/136+140-10/136+140-9/136+140-8/136+140-7/136+140-6/136+140-5/136+140-4/136+140-3/136+140-2/136+140-1' --no-mtime --no-check-certificate $1. ;}";
       a = "(){ ~/python/yt-dlp --path /storage/myfiles/youtube --cookies-from-browser firefox -f 'bestaudio' --extract-audio --audio-format mp3 --no-check-certificate $1. ;}";
       sp = "(){ cd ~/python/spotdl && spotdl --output '/storage/myfiles/Music/{artist}_{year}_{album}/{track-number} - {title}.{output-ext}' --yt-dlp-args '--cookies-from-browser firefox' $1. ;}";
       s = "(){ spotdl --output '/storage/myfiles/Music//{artist}_{year}_{album}/{track-number} - {title}.{output-ext}' --yt-dlp-args '--cookies-from-browser firefox' $1. ;}";
