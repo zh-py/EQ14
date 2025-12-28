@@ -300,6 +300,8 @@
         8300 # Home Assistant
         8880 # Zigbee2MQTT
         80 # Alexa Philips Hue Bridge V1 (round)
+        22 # x2go
+        2022 # eternal-terminal
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -506,47 +508,77 @@
     enable = true;
     openFirewall = true;
   };
+  #services.eternal-terminal = {
+  #enable = true;
+  #};
+  #systemd.services.eternal-terminal.serviceConfig = {
+  #Type = lib.mkForce "simple";
+  #ExecStart = lib.mkForce "${pkgs.eternal-terminal}/bin/etserver --cfgfile=/etc/et.cfg";
+  #Restart = "on-failure";
+  #};
 
   virtualisation.oci-containers = {
     backend = "docker";
-    containers.homeassistant = {
-      image = "ghcr.io/home-assistant/home-assistant:stable";
-      volumes = [
-        "home-assistant:/config"
-      ];
-      environment.TZ = "Asia/Shanghai";
-      extraOptions = [
-        "--network=host"
-        "--device=/dev/ttyUSB0:/dev/ttyUSB0"
-        "--privileged"
-      ];
+
+    containers = {
+      homeassistant = {
+        image = "ghcr.io/home-assistant/home-assistant:stable";
+        volumes = [ "home-assistant:/config" ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          "--device=/dev/ttyUSB0:/dev/ttyUSB0"
+          "--privileged"
+        ];
+      };
+
+      postgres = {
+        image = "postgres:16";
+        environment = {
+          POSTGRES_DB = "homeassistant";
+          POSTGRES_USER = "ha";
+          POSTGRES_PASSWORD = "ha_password";
+        };
+        volumes = [ "/storage/postgres:/var/lib/postgresql/data" ];
+        extraOptions = [ "--network=host" ];
+      };
+
+      influxdb2 = {
+        image = "influxdb:2.7";
+        volumes = [ "/storage/influxdb2:/var/lib/influxdb2" ];
+        extraOptions = [ "--network=host" ];
+        # environment left empty since you already initialized
+      };
+
+      matter-server = {
+        image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
+        volumes = [
+          "matter-server:/data"
+          "/run/dbus:/run/dbus"
+        ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [ "--network=host" ];
+      };
+
+      node-red = {
+        image = "nodered/node-red:latest";
+        ports = [ "1880:1880" ];
+        volumes = [ "node-red-data:/data" ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          "--cap-add=NET_BIND_SERVICE"
+        ];
+      };
     };
   };
-  virtualisation.oci-containers.containers.matter-server = {
-    image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
-    volumes = [
-      "matter-server:/data"
-      "/run/dbus:/run/dbus"
-    ];
-    environment = {
-      TZ = "Asia/Shanghai";
-    };
-    extraOptions = [
-      "--network=host"
-    ];
-  };
-  virtualisation.oci-containers.containers.node-red = {
-    image = "nodered/node-red:latest";
-    ports = [ "1880:1880" ];
-    volumes = [ "node-red-data:/data" ];
-    environment = {
-      TZ = "Asia/Shanghai";
-    };
-    extraOptions = [
-      "--network=host" # Required for SSDP broadcast and port 80 binding
-      "--cap-add=NET_BIND_SERVICE" # Allows binding to privileged ports like 80
-    ];
-  };
+
   services.nginx = {
     enable = false;
 
@@ -848,14 +880,23 @@
   #services.xserver.windowManager.twm.enable = true;
   services = {
     xserver = {
-      enable = false;
+      enable = true;
       displayManager = {
         startx.enable = true;
+        lightdm.enable = false;
       };
-      desktopManager.xfce.enable = false;
+      desktopManager = {
+        xfce.enable = false;
+        mate.enable = false;
+        lxqt.enable = false;
+      };
+      windowManager = {
+        openbox.enable = false;
+      };
     };
     displayManager = {
-      enable = false;
+      enable = true;
+      #defaultSession = "xfce";
       autoLogin = {
         enable = false;
         user = "py";
@@ -864,11 +905,11 @@
       sddm.enable = false;
     };
     desktopManager = {
-      gnome = {
-        enable = false;
-      };
       plasma6 = {
         enable = true;
+      };
+      gnome = {
+        enable = false;
       };
     };
     libinput.enable = true;
@@ -879,6 +920,10 @@
     xrdp = {
       enable = true;
       defaultWindowManager = "startplasma-x11";
+      #defaultWindowManager = "startlxqt";
+      #defaultWindowManager = "startxfce4";
+      #defaultWindowManager = "mate-session";
+
       openFirewall = true;
       #extraConfDirCommands = ''
       #cat <<EOF > $out/custom-globals.ini
@@ -1296,6 +1341,7 @@
     inxi
     xorg.xev
     xorg.xauth
+    xorg.xinit
     xclip
     wev
     sxhkd
@@ -1317,6 +1363,7 @@
     php
     gparted
     pciutils
+    psmisc
     usbutils
     inetutils
     tcpdump
@@ -1326,6 +1373,12 @@
     linuxKernel.packages.linux_6_12.cpupower
     toybox
     tcpdump
+
+    x2goserver
+    xfce.xfwm4
+    xfce.thunar
+    mate.mate-session-manager
+    openbox
 
     xorg.xorgserver
     wayvnc
