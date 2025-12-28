@@ -517,6 +517,25 @@
   #Restart = "on-failure";
   #};
 
+  systemd.services.dockerupdate = {
+    description = "Update Docker containers";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = ''
+        /run/current-system/sw/bin/bash "/home/py/Dropbox (Maestral)/mac_config/Scripts/dockerupdate.sh"
+      '';
+    };
+    path = [ pkgs.docker pkgs.systemd pkgs.bash ];
+  };
+  systemd.timers.dockerupdate = {
+    description = "Run Docker update script every Saturday at 2 AM";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Sat *-*-* 02:00:00";
+      Persistent = true;
+    };
+  };
+
   virtualisation.oci-containers = {
     backend = "docker";
 
