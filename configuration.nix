@@ -198,7 +198,7 @@
     useNetworkd = false;
     #useDHCP = true;
     wireless = {
-      userControlled.enable = true;
+      userControlled = true;
       enable = true;
     };
 
@@ -298,10 +298,12 @@
         #53 # DNS
         8123 # Home Assistant
         8300 # Home Assistant
-        8880 # Zigbee2MQTT
-        80 # Alexa Philips Hue Bridge V1 (round)
         22 # x2go
         2022 # eternal-terminal
+        8880 # Zigbee2MQTT
+        3000 # grafana
+        5050 # pgAdmin4
+        5432 # pgAdmin to postgres
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -525,7 +527,11 @@
         /run/current-system/sw/bin/bash "/home/py/Dropbox (Maestral)/mac_config/Scripts/dockerupdate.sh"
       '';
     };
-    path = [ pkgs.docker pkgs.systemd pkgs.bash ];
+    path = [
+      pkgs.docker
+      pkgs.systemd
+      pkgs.bash
+    ];
   };
   systemd.timers.dockerupdate = {
     description = "Run Docker update script every Saturday at 2 AM";
@@ -536,13 +542,32 @@
     };
   };
 
+  systemd.services.docker-network-pgnet = {
+    description = "Ensure Docker network pgnet exists";
+    after = [
+      "docker.service"
+      "docker.socket"
+    ];
+    requires = [ "docker.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = ''/run/current-system/sw/bin/sh -lc '${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || ${pkgs.docker}/bin/docker network create --driver bridge pgnet' '';
+    };
+    wantedBy = [ "multi-user.target" ];
+  };
+  #system.activationScripts."docker-network-pgnet" = {
+  #text = ''${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || \ ${pkgs.docker}/bin/docker network create --driver bridge pgnet '';
+  #}; # this also works, starts at every nixos switch
+
   virtualisation.oci-containers = {
     backend = "docker";
 
     containers = {
       homeassistant = {
         image = "ghcr.io/home-assistant/home-assistant:stable";
-        volumes = [ "home-assistant:/config" ];
+        #volumes = [ "home-assistant:/config" ];
+        volumes = [ "/storage/home-assistant:/config" ];
         environment = {
           TZ = "Asia/Shanghai";
         };
@@ -561,14 +586,49 @@
           POSTGRES_PASSWORD = "ha_password";
         };
         volumes = [ "/storage/postgres:/var/lib/postgresql/data" ];
-        extraOptions = [ "--network=host" ];
+        networks = [ "pgnet" ];
+      };
+      pgadmin = {
+        image = "dpage/pgadmin4";
+        environment = {
+          PGADMIN_DEFAULT_EMAIL = "pierrez1984@gmail.com";
+          PGADMIN_DEFAULT_PASSWORD = "admin";
+        };
+        ports = [ "5050:80" ];
+        networks = [ "pgnet" ];
       };
 
       influxdb2 = {
         image = "influxdb:2.7";
         volumes = [ "/storage/influxdb2:/var/lib/influxdb2" ];
         extraOptions = [ "--network=host" ];
-        # environment left empty since you already initialized
+      };
+
+      mosquitto = {
+        image = "eclipse-mosquitto:latest";
+        volumes = [
+          "/storage/mosquitto/config:/mosquitto/config"
+          "/storage/mosquitto/data:/mosquitto/data"
+          "/storage/mosquitto/log:/mosquitto/log"
+        ];
+        ports = [
+          "1883:1883" # MQTT broker port
+          "9001:9001" # optional WebSocket port
+        ];
+        extraOptions = [ "--network=host" ];
+      };
+
+      zigbee2mqtt = {
+        image = "koenkk/zigbee2mqtt:latest";
+        volumes = [ "/storage/zigbee2mqtt:/app/data" ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          "--device=/dev/serial/by-id/usb-Nabu_Casa_Home_Assistant_Connect_ZBT-1_28952146e210f0119010aae541f80dde-if00-port0:/dev/ttyZigbee"
+          #"--device=/dev/ttyUSB0:/dev/ttyUSB0"
+        ];
       };
 
       matter-server = {
@@ -593,6 +653,58 @@
         extraOptions = [
           "--network=host"
           "--cap-add=NET_BIND_SERVICE"
+        ];
+      };
+    };
+  };
+
+  #services.pgadmin = {
+  #enable = true;
+  #initialEmail = "pierrez1984@gmail.com";
+  #initialPasswordFile = "/home/py/Dropbox (Maestral)/mac_config/Scripts/pgadmin-pass";
+  #};
+
+  services.grafana = {
+    enable = true;
+    settings.server = {
+      http_addr = "0.0.0.0";
+      http_port = 3000;
+      root_url = "http://localhost:3000";
+    };
+    provision = {
+      enable = true;
+      datasources.settings = {
+        apiVersion = 1;
+        datasources = [
+          {
+            name = "InfluxDB2";
+            type = "influxdb";
+            url = "http://127.0.0.1:8086";
+            access = "proxy";
+            jsonData = {
+              version = "Flux";
+              organization = "ha_py";
+              defaultBucket = "homeassistant";
+            };
+            secureJsonData = {
+              token = "j2YFRlFlkfExuv7RSknZyceQrZcWTPRiM4D9neOYJmXPnOwxw3duKIftzVhxDZfcxj_U-5TbI99iwvFjDk3GRA==";
+            };
+          }
+          {
+            name = "Postgres-HA";
+            type = "postgres";
+            url = "127.0.0.1:5432";
+            access = "proxy";
+            user = "ha";
+            jsonData = {
+              database = "homeassistant";
+              sslmode = "disable";
+            };
+            #secureJsonData = {
+            ##passwordFile = "/home/py/Dropbox (Maestral)/mac_config/Scripts/pgadmin-pass";
+            #password = "ha_password";
+            #};
+          }
         ];
       };
     };
@@ -824,6 +936,8 @@
 
   virtualisation.docker = {
     enable = true;
+
+    extraOptions = "--iptables=false";
 
     rootless = {
       enable = true;
@@ -1288,6 +1402,7 @@
       "seat"
       "sambashare"
       "moviegroup"
+      "dialout"
     ];
     packages = with pkgs; [
     ];
