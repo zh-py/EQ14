@@ -576,6 +576,8 @@
           "--device=/dev/ttyUSB0:/dev/ttyUSB0"
           "--privileged"
         ];
+        #ports = [ "8123:8123" ];
+        #networks = [ "pgnet" ];
       };
 
       postgres = {
@@ -586,6 +588,7 @@
           POSTGRES_PASSWORD = "ha_password";
         };
         volumes = [ "/storage/postgres:/var/lib/postgresql/data" ];
+        ports = [ "5432:5432" ]; # expose to host so HA can reach it
         networks = [ "pgnet" ];
       };
       pgadmin = {
@@ -601,7 +604,9 @@
       influxdb2 = {
         image = "influxdb:2.7";
         volumes = [ "/storage/influxdb2:/var/lib/influxdb2" ];
-        extraOptions = [ "--network=host" ];
+        #extraOptions = [ "--network=host" ];
+        ports = [ "8086:8086" ]; # expose API
+        networks = [ "pgnet" ];
       };
 
       mosquitto = {
@@ -615,7 +620,8 @@
           "1883:1883" # MQTT broker port
           "9001:9001" # optional WebSocket port
         ];
-        extraOptions = [ "--network=host" ];
+        #extraOptions = [ "--network=host" ];
+        networks = [ "pgnet" ];
       };
 
       zigbee2mqtt = {
@@ -631,18 +637,6 @@
         ];
       };
 
-      matter-server = {
-        image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
-        volumes = [
-          "matter-server:/data"
-          "/run/dbus:/run/dbus"
-        ];
-        environment = {
-          TZ = "Asia/Shanghai";
-        };
-        extraOptions = [ "--network=host" ];
-      };
-
       node-red = {
         image = "nodered/node-red:latest";
         ports = [ "1880:1880" ];
@@ -655,6 +649,18 @@
           "--cap-add=NET_BIND_SERVICE"
         ];
       };
+
+      #matter-server = {
+        #image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
+        #volumes = [
+          #"matter-server:/data"
+          #"/run/dbus:/run/dbus"
+        #];
+        #environment = {
+          #TZ = "Asia/Shanghai";
+        #};
+        #extraOptions = [ "--network=host" ];
+      #};
     };
   };
 
