@@ -565,7 +565,7 @@
 
     containers = {
       homeassistant = {
-        image = "ghcr.io/home-assistant/home-assistant:stable";
+        image = "ghcr.io/home-assistant/home-assistant:latest";
         #volumes = [ "home-assistant:/config" ];
         volumes = [ "/storage/home-assistant:/config" ];
         environment = {
@@ -581,7 +581,7 @@
       };
 
       postgres = {
-        image = "postgres:16";
+        image = "postgres:16.3";
         environment = {
           POSTGRES_DB = "homeassistant";
           POSTGRES_USER = "ha";
