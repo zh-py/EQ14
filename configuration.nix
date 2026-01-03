@@ -1496,6 +1496,7 @@
     libsForQt5.ki18n
     libsForQt5.qt5ct
     kdePackages.ki18n
+    libnotify
     playerctl
     qpwgraph
     font-manager
@@ -1508,15 +1509,15 @@
     inetutils
     tcpdump
     mtr
-    cpu-x
+    #cpu-x
     linuxKernel.packages.linux_6_12.turbostat
     linuxKernel.packages.linux_6_12.cpupower
     toybox
     tcpdump
 
     x2goserver
-    xfce.xfwm4
-    xfce.thunar
+    xfwm4
+    thunar
     mate.mate-session-manager
     openbox
 

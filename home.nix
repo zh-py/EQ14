@@ -47,12 +47,6 @@
   #};
   #};
 
-  #nixpkgs.config.packageOverrides = pkgs: {
-    #maestral = pkgs.maestral.overridePythonAttrs (old: {
-      #doCheck = false;
-    #});
-  #};
-
   home.packages = with pkgs; [
     #nixos only
     #clash-nyanpasu
@@ -103,7 +97,7 @@
     gpick
     telegram-desktop
     #ventoy
-    galculator
+    #galculator
     qalculate-gtk
     playerctl
     bluetooth_battery
@@ -251,6 +245,7 @@
     ))
   ];
 
+
   services.mpris-proxy.enable = true;
 
   services.fusuma = {
@@ -365,6 +360,20 @@
       };
     };
   };
+
+  #systemd.user.services.maestral = {
+    #description = "Maestral daemon";
+    #wantedBy = [ "default.target" ];
+    #serviceConfig = {
+      #Type = "notify";
+      #NotifyAccess = "exec";
+      #ExecStart = "/etc/profiles/per-user/py/bin/maestral start -f";
+      #ExecStop = "/etc/profiles/per-user/py/bin/maestral stop";
+      #ExecStopPost = "/run/current-system/sw/bin/bash -c \"if [ \\$SERVICE_RESULT != success ]; then /run/current-system/sw/bin/notify-send Maestral 'Daemon failed'; fi\"";
+      #WatchdogSec = "30s";
+      #Restart = "always";
+    #};
+  #};
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
