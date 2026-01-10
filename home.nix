@@ -47,6 +47,11 @@
   #};
   #};
 
+  nixpkgs.config = {
+    allowUnfree = true;
+    allowUnfreePredicate = _: true;
+  };
+
   home.packages = with pkgs; [
     #nixos only
     #clash-nyanpasu
@@ -161,7 +166,7 @@
     rclone
     syncthing
     nil
-    nixfmt-rfc-style
+    nixfmt
     pyright
     poetry
     ruff
@@ -244,7 +249,6 @@
       ]
     ))
   ];
-
 
   services.mpris-proxy.enable = true;
 
@@ -362,17 +366,17 @@
   };
 
   #systemd.user.services.maestral = {
-    #description = "Maestral daemon";
-    #wantedBy = [ "default.target" ];
-    #serviceConfig = {
-      #Type = "notify";
-      #NotifyAccess = "exec";
-      #ExecStart = "/etc/profiles/per-user/py/bin/maestral start -f";
-      #ExecStop = "/etc/profiles/per-user/py/bin/maestral stop";
-      #ExecStopPost = "/run/current-system/sw/bin/bash -c \"if [ \\$SERVICE_RESULT != success ]; then /run/current-system/sw/bin/notify-send Maestral 'Daemon failed'; fi\"";
-      #WatchdogSec = "30s";
-      #Restart = "always";
-    #};
+  #description = "Maestral daemon";
+  #wantedBy = [ "default.target" ];
+  #serviceConfig = {
+  #Type = "notify";
+  #NotifyAccess = "exec";
+  #ExecStart = "/etc/profiles/per-user/py/bin/maestral start -f";
+  #ExecStop = "/etc/profiles/per-user/py/bin/maestral stop";
+  #ExecStopPost = "/run/current-system/sw/bin/bash -c \"if [ \\$SERVICE_RESULT != success ]; then /run/current-system/sw/bin/notify-send Maestral 'Daemon failed'; fi\"";
+  #WatchdogSec = "30s";
+  #Restart = "always";
+  #};
   #};
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
@@ -470,37 +474,12 @@
   programs.mpv = {
     # mkdir /var/log/mpv && sudo chmod -R u=rwx,g=rwx,o=rwx /var/log/mpv    ### for recent.lua history.log
     enable = true;
-    package = (
-      pkgs.mpv-unwrapped.wrapper {
-        scripts = with pkgs.mpvScripts; [
-          #uosc
-          sponsorblock
-          mpris
-          thumbfast
-        ];
-        mpv = pkgs.mpv-unwrapped.override {
-          waylandSupport = true;
-          ffmpeg = pkgs.ffmpeg-full;
-        };
-      }
-    );
-    #config = {
-    #"script-opts" = "ytdl_hook-ytdl_path=/etc/profiles/per-user/py/bin/yt-dlp";
-    #"ytdl-format" = "bestvideo[height<=?720][fps<=?30][vcodec!=?webm]+bestaudio/best";
-    #"hwdec" = "auto";
-    #osd-fractions;
-    #save-position-on-quit;
-    #"sub-auto" = "fuzzy";
-    #"ytdl-raw-options" = "sub-lang='en',write-sub=,write-auto-sub=";
-    #"sub-font" = "Noto Color Emoji";
-    #"sub-font-size" = 35;
-    #"sub-border-size" = 1.5;
-    #"ao" = "pipewire";
-    #};
-  };
-  nixpkgs.config = {
-    allowUnfree = true;
-    allowUnfreePredicate = _: true;
+    scripts = with pkgs.mpvScripts; [
+      sponsorblock
+      mpris
+      thumbfast
+      #uosc
+    ];
   };
 
   #programs.mpv = {
@@ -944,7 +923,7 @@
         plugin = nvim-treesitter.withAllGrammars;
         type = "lua";
         config = ''
-          require('nvim-treesitter.configs').setup({
+          require('nvim-treesitter').setup({
             highlight = {
               enable = true,
               --disable = { "latex" },

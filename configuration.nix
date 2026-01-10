@@ -34,6 +34,16 @@
     ./hardware-configuration.nix
   ];
 
+  nixpkgs.config = {
+    allowUnfree = true;
+  };
+
+  nixpkgs.config.packageOverrides = pkgs: {
+    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
+      inherit pkgs;
+    };
+  };
+
   nix.settings.substituters = [
     "https://mirror.sjtu.edu.cn/nix-channels/store"
     "https://mirrors.ustc.edu.cn/nix-channels/store"
@@ -651,15 +661,15 @@
       };
 
       #matter-server = {
-        #image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
-        #volumes = [
-          #"matter-server:/data"
-          #"/run/dbus:/run/dbus"
-        #];
-        #environment = {
-          #TZ = "Asia/Shanghai";
-        #};
-        #extraOptions = [ "--network=host" ];
+      #image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
+      #volumes = [
+      #"matter-server:/data"
+      #"/run/dbus:/run/dbus"
+      #];
+      #environment = {
+      #TZ = "Asia/Shanghai";
+      #};
+      #extraOptions = [ "--network=host" ];
       #};
     };
   };
@@ -1431,13 +1441,7 @@
     description = "Read-only movie user for Samba";
   };
 
-  nixpkgs.config.allowUnfree = true;
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
-      inherit pkgs;
-    };
-  };
 
   environment.systemPackages = with pkgs; [
     automake
