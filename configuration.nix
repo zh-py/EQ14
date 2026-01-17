@@ -312,8 +312,9 @@
         2022 # eternal-terminal
         8880 # Zigbee2MQTT
         3000 # grafana
-        5050 # pgAdmin4
-        5432 # pgAdmin to postgres
+        #8888 # influxdb3 influxdb3-explorer
+        #5050 # pgAdmin4
+        #5432 # pgAdmin to postgres
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -487,15 +488,33 @@
     #];
     #FallbackDNS=1.1.1.1 8.8.8.8
     #DNS=8.8.8.8 1.1.1.1
-    extraConfig = ''
-      DNS=8.8.8.8 1.1.1.1
-      FallbackDNS=9.9.9.9 149.112.112.112
-      Domains=~.
-      DNSSEC=allow-downgrade
-      DNSStubListener=yes
-      DNSStubListenerExtra=192.168.2.1
-      ResolveUnicastSingleLabel=yes
-    '';
+
+    #settings = ''
+    #DNS=8.8.8.8 1.1.1.1
+    #FallbackDNS=9.9.9.9 149.112.112.112
+    #Domains=~.
+    #DNSSEC=allow-downgrade
+    #DNSStubListener=yes
+    #DNSStubListenerExtra=192.168.2.1
+    #ResolveUnicastSingleLabel=yes
+    #'';
+    settings = {
+      Resolve = {
+        DNS = [
+          "8.8.8.8"
+          "1.1.1.1"
+        ];
+        FallbackDNS = [
+          "9.9.9.9"
+          "149.112.112.112"
+        ];
+        Domains = [ "~." ];
+        DNSSEC = "allow-downgrade";
+        DNSStubListener = "yes";
+        DNSStubListenerExtra = [ "192.168.2.1" ];
+        ResolveUnicastSingleLabel = "yes";
+      };
+    };
     #fallbackDns = [ "127.0.0.1" ];
     #extraConfig = ''
     #DNS=127.0.0.1
@@ -562,7 +581,7 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = ''/run/current-system/sw/bin/sh -lc '${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || ${pkgs.docker}/bin/docker network create --driver bridge pgnet' '';
+      ExecStart = "/run/current-system/sw/bin/sh -lc '${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || ${pkgs.docker}/bin/docker network create --driver bridge pgnet' ";
     };
     wantedBy = [ "multi-user.target" ];
   };
@@ -590,34 +609,60 @@
         #networks = [ "pgnet" ];
       };
 
-      postgres = {
-        image = "postgres:16.3";
-        environment = {
-          POSTGRES_DB = "homeassistant";
-          POSTGRES_USER = "ha";
-          POSTGRES_PASSWORD = "ha_password";
-        };
-        volumes = [ "/storage/postgres:/var/lib/postgresql/data" ];
-        ports = [ "5432:5432" ]; # expose to host so HA can reach it
+      influxdb3 = {
+        image = "influxdb:3-core"; # Standard v3 image
+        #image = "influxdb:latest"; # Standard v3 image
+        volumes = [ "/storage/influxdb3:/var/lib/influxdb3" ];
+        ports = [ "8181:8181" ]; # Port 8181 is default for v3
         networks = [ "pgnet" ];
+        extraOptions = [ "--name=influxdb3" ];
+        cmd = [
+          "influxdb3"
+          "serve"
+          "--node-id=NixNAS"
+          "--object-store=file"
+          "--data-dir=/var/lib/influxdb3"
+        ];
       };
-      pgadmin = {
-        image = "dpage/pgadmin4";
-        environment = {
-          PGADMIN_DEFAULT_EMAIL = "pierrez1984@gmail.com";
-          PGADMIN_DEFAULT_PASSWORD = "admin";
-        };
-        ports = [ "5050:80" ];
-        networks = [ "pgnet" ];
+      influxdb3-explorer = {
+        image = "influxdata/influxdb3-ui:latest";
+        ports = [
+          "8888:80"
+        ];
+        extraOptions = [
+          "--name=influxdb3-explorer"
+          "--network=pgnet"
+        ];
       };
 
-      influxdb2 = {
-        image = "influxdb:2.7";
-        volumes = [ "/storage/influxdb2:/var/lib/influxdb2" ];
-        #extraOptions = [ "--network=host" ];
-        ports = [ "8086:8086" ]; # expose API
-        networks = [ "pgnet" ];
-      };
+      #postgres = {
+      ##image = "postgres:latest";
+      #image = "postgres:16.3";
+      #environment = {
+      #POSTGRES_DB = "homeassistant";
+      #POSTGRES_USER = "ha";
+      #POSTGRES_PASSWORD = "ha_password";
+      #};
+      #volumes = [ "/storage/postgres:/var/lib/postgresql/data" ];
+      #ports = [ "5432:5432" ]; # expose to host so HA can reach it
+      #networks = [ "pgnet" ];
+      #};
+      #pgadmin = {
+      #image = "dpage/pgadmin4";
+      #environment = {
+      #PGADMIN_DEFAULT_EMAIL = "pierrez1984@gmail.com";
+      #PGADMIN_DEFAULT_PASSWORD = "admin";
+      #};
+      #ports = [ "5050:80" ];
+      #networks = [ "pgnet" ];
+      #};
+
+      #influxdb2 = {
+      #image = "influxdb:latest";
+      #volumes = [ "/storage/influxdb2:/var/lib/influxdb2" ];
+      #ports = [ "8086:8086" ]; # expose API
+      #networks = [ "pgnet" ];
+      #};
 
       mosquitto = {
         image = "eclipse-mosquitto:latest";
@@ -671,6 +716,33 @@
       #};
       #extraOptions = [ "--network=host" ];
       #};
+
+      grafana = {
+        image = "grafana/grafana:latest";
+        ports = [ "3000:3000" ];
+        networks = [ "pgnet" ];
+        volumes = [
+          "/storage/grafana:/var/lib/grafana"
+        ];
+        environment = {
+          GF_SERVER_ROOT_URL = "http://192.168.2.1:3000";
+          GF_RENDERING_SERVER_URL = "http://grafana-renderer:8081/render";
+          GF_RENDERING_CALLBACK_URL = "http://192.168.2.1:3000/";
+          GF_RENDERING_SERVER_AUTH_TOKEN = "supersecret-render-token";
+        };
+      };
+      grafana-renderer = {
+        image = "grafana/grafana-image-renderer:latest";
+        networks = [ "pgnet" ];
+        environment = {
+          ENABLE_METRICS = "true";
+          RENDERING_MODE = "server";
+          RENDERING_SERVER_AUTH_TOKEN = "supersecret-render-token";
+        };
+        extraOptions = [
+          "--cap-add=SYS_ADMIN"
+        ];
+      };
     };
   };
 
@@ -681,11 +753,24 @@
   #};
 
   services.grafana = {
-    enable = true;
-    settings.server = {
-      http_addr = "0.0.0.0";
-      http_port = 3000;
-      root_url = "http://localhost:3000";
+    enable = false;
+
+    settings = {
+      server = {
+        http_addr = "0.0.0.0";
+        domain = "192.168.2.1";
+        root_url = "http://192.168.2.1:3000/";
+      };
+      # Clear and consistent rendering config
+      "rendering" = {
+        server_url = "http://127.0.0.1:8081/render";
+        callback_url = "http://192.168.2.1:3000/";
+      };
+      #"plugin.grafana-image-renderer" = {
+      #rendering_server_url = "http://localhost:8081/render";
+      #rendering_callback_url = "http://localhost:3000/";
+      #};
+
     };
     provision = {
       enable = true;
@@ -723,6 +808,18 @@
           }
         ];
       };
+    };
+  };
+  services.grafana-image-renderer = {
+    enable = false;
+    provisionGrafana = true;
+    settings = {
+      #server.addr = "127.0.0.1:8081";
+      browser = {
+        #path = "${pkgs.chromium}/bin/chromium";
+        #args = [ "--no-sandbox" "--disable-dev-shm-usage" ];
+      };
+
     };
   };
 
@@ -1440,8 +1537,6 @@
     group = "moviegroup";
     description = "Read-only movie user for Samba";
   };
-
-
 
   environment.systemPackages = with pkgs; [
     automake
