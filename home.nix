@@ -168,7 +168,7 @@
     nil
     nixfmt
     pyright
-    #poetry
+    poetry
     ruff
     luajitPackages.luacheck
     lua-language-server
