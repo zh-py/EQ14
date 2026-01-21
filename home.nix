@@ -1035,6 +1035,8 @@
       #cmp-vsnip
       #vim-vsnip
       #friendly-snippets
+      luasnip
+      cmp_luasnip
       cmp-nvim-lsp
       lspkind-nvim
       {

@@ -726,9 +726,12 @@
         ];
         environment = {
           GF_SERVER_ROOT_URL = "http://192.168.2.1:3000";
-          GF_RENDERING_SERVER_URL = "http://grafana-renderer:8081/render";
-          GF_RENDERING_CALLBACK_URL = "http://192.168.2.1:3000/";
+          GF_RENDERING_SERVER_URL = "http://renderer:8081/render";
+          GF_RENDERING_CALLBACK_URL = "http://grafana:3000/";
+          #GF_RENDERING_SERVER_URL = "http://grafana-renderer:8081/render";
+          #GF_RENDERING_CALLBACK_URL = "http://192.168.2.1:3000/";
           GF_RENDERING_SERVER_AUTH_TOKEN = "supersecret-render-token";
+          TZ = "Asia/Shanghai";
         };
       };
       grafana-renderer = {
@@ -738,6 +741,7 @@
           ENABLE_METRICS = "true";
           RENDERING_MODE = "server";
           RENDERING_SERVER_AUTH_TOKEN = "supersecret-render-token";
+          TZ = "Asia/Shanghai";
         };
         extraOptions = [
           "--cap-add=SYS_ADMIN"
