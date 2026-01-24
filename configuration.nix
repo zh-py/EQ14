@@ -609,31 +609,47 @@
         #networks = [ "pgnet" ];
       };
 
-      influxdb3 = {
-        image = "influxdb:3-core"; # Standard v3 image
-        #image = "influxdb:latest"; # Standard v3 image
-        volumes = [ "/storage/influxdb3:/var/lib/influxdb3" ];
-        ports = [ "8181:8181" ]; # Port 8181 is default for v3
+      victoriametrics = {
+        image = "victoriametrics/victoria-metrics:latest";
+        volumes = [ "/storage/victoriametrics:/storage" ];
+        ports = [ "8428:8428" ];
         networks = [ "pgnet" ];
-        extraOptions = [ "--name=influxdb3" ];
+        extraOptions = [ "--name=victoriametrics" ];
         cmd = [
-          "influxdb3"
-          "serve"
-          "--node-id=NixNAS"
-          "--object-store=file"
-          "--data-dir=/var/lib/influxdb3"
+          "-storageDataPath=/storage"
+          "-retentionPeriod=10y"
+          "-selfScrapeInterval=1m"
         ];
       };
-      influxdb3-explorer = {
-        image = "influxdata/influxdb3-ui:latest";
-        ports = [
-          "8888:80"
-        ];
-        extraOptions = [
-          "--name=influxdb3-explorer"
-          "--network=pgnet"
-        ];
-      };
+
+      #influxdb3 = {
+      ##image = "influxdb:3-core"; # Standard v3 image
+      ##image = "influxdb:latest"; # Standard v3 image
+      #image = "influxdb:3-enterprise";
+      #volumes = [ "/storage/influxdb3:/var/lib/influxdb3" ];
+      #ports = [ "8181:8181" ]; # Port 8181 is default for v3
+      #networks = [ "pgnet" ];
+      #extraOptions = [ "--name=influxdb3" ];
+      #cmd = [
+      #"influxdb3"
+      #"serve"
+      #"--node-id=NixNAS"
+      #"--cluster-id=NixNAS-Cluster"
+      #"--license-email=pierrez1984@gmail.com"
+      #"--object-store=file"
+      #"--data-dir=/var/lib/influxdb3"
+      #];
+      #};
+      #influxdb3-explorer = {
+      #image = "influxdata/influxdb3-ui:latest";
+      #ports = [
+      #"8888:80"
+      #];
+      #extraOptions = [
+      #"--name=influxdb3-explorer"
+      #"--network=pgnet"
+      #];
+      #};
 
       #postgres = {
       ##image = "postgres:latest";
@@ -1203,29 +1219,34 @@
 
   #services.gnome.gnome-remote-desktop.enable = true;
 
-  security.sudo.extraRules = [
-    {
-      users = [ "py" ];
-      commands = [
-        {
-          command = "/run/current-system/sw/bin/systemctl poweroff";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/poweroff";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl suspend";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl sleep";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
+  security.sudo = {
+    extraConfig = ''
+      Defaults:py timestamp_timeout=60
+    '';
+    extraRules = [
+      {
+        users = [ "py" ];
+        commands = [
+          {
+            command = "/run/current-system/sw/bin/systemctl poweroff";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/poweroff";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/systemctl suspend";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/systemctl sleep";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
+  };
 
   systemd.targets.sleep.enable = true;
   systemd.targets.suspend.enable = true;
@@ -1569,6 +1590,7 @@
     libsForQt5.qt5ct
     kdePackages.breeze-icons
     gnome-icon-theme
+    hicolor-icon-theme
     shared-mime-info
 
     bibata-cursors
