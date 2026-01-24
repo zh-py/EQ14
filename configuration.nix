@@ -560,6 +560,7 @@
       pkgs.docker
       pkgs.systemd
       pkgs.bash
+      pkgs.rsync
     ];
   };
   systemd.timers.dockerupdate = {
