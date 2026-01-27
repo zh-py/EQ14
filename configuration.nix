@@ -1223,6 +1223,8 @@
   security.sudo = {
     extraConfig = ''
       Defaults:py timestamp_timeout=60
+            Defaults:py timestamp_type=global
+
     '';
     extraRules = [
       {
@@ -1636,6 +1638,7 @@
     tcpdump
     mtr
     #cpu-x
+    vulkan-tools
     linuxKernel.packages.linux_6_12.turbostat
     linuxKernel.packages.linux_6_12.cpupower
     toybox
