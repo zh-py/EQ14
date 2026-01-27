@@ -169,7 +169,6 @@
     nixfmt
     pyright
     poetry
-    ruff
     luajitPackages.luacheck
     lua-language-server
     marksman
@@ -222,15 +221,19 @@
 
     stack
 
-    (python313.withPackages (
+    (python314.withPackages (
       p: with p; [
         py-cpuinfo
-        #extractcode
+        extractcode
         pip
         numpy
         jupyter
+        jupyterlab-lsp
+        python-lsp-server
+        jedi-language-server
         qtconsole
         sympy
+        scipy
         requests
         pandas
         matplotlib
@@ -243,6 +246,8 @@
         debugpy
         python-lsp-server
         python-lsp-ruff
+        ruff
+        black
         pynvim
         send2trash
         openpyxl
