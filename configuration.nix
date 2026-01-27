@@ -1222,9 +1222,8 @@
 
   security.sudo = {
     extraConfig = ''
-      Defaults:py timestamp_timeout=60
-            Defaults:py timestamp_type=global
-
+      Defaults:py timestamp_timeout=600
+      Defaults:py timestamp_type=global
     '';
     extraRules = [
       {

@@ -141,7 +141,10 @@ local servers = {
 
 	nil_ls = {
 		cmd = { 'nil' },
-
+		on_attach = function(client)
+			client.server_capabilities.documentFormattingProvider = true
+			client.server_capabilities.documentRangeFormattingProvider = true
+		end,
 		filetypes = { "nix" },
 		settings = {
 			['nil'] = {
