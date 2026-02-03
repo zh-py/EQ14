@@ -1501,6 +1501,7 @@
     efont-unicode
     noto-fonts-color-emoji
     dina-font
+    fanwood
 
     nerd-fonts.fira-code
     nerd-fonts.jetbrains-mono
