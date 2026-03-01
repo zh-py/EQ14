@@ -577,6 +577,11 @@
         email = "pierrez1984@gmail.com";
         name = "zh-py";
       };
+      safe = {
+        directory = [
+          "/etc/nixos"
+        ];
+      };
       core = {
         editor = "nvim";
         pager = "delta --dark";
