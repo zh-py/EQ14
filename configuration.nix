@@ -1,0 +1,1843 @@
+# Edit this configuration file to define what should be installed on
+# your system.  Help is available in the configuration.nix(5) man page
+# and in the NixOS manual (accessible by running ‘nixos-help’).
+
+{
+  pkgs,
+  config,
+  lib,
+  inputs,
+  ...
+}:
+#let
+#nextcloudHostname = "nextcloudpy.com"; # Or "YOUR_NIXOS_IP_ADDRESS"
+#nextcloudIpAddress = "YOUR_NIXOS_IP_ADDRESS"; # Replace with your actual server's local IP (e.g., 192.168.1.100)
+#nextcloudPath = "/var/lib/nextcloud";
+#in
+#let
+#hacs = pkgs.stdenv.mkDerivation {
+#name = "hacs";
+#src = pkgs.fetchFromGitHub {
+#owner = "hacs";
+#repo = "integration";
+#rev = "2.0.5";
+#sha256 = "sha256-VUGCE2ZcyI9pHqYpEiJMWttYOfuH81QvuwSGMEC0a3o=";
+#};
+#installPhase = ''
+#mkdir -p $out/custom_components/hacs
+#cp -r * $out/custom_components/hacs
+#'';
+#};
+#in
+{
+  imports = [
+    ./hardware-configuration.nix
+  ];
+  nixpkgs.overlays = [
+    inputs.nix-openclaw.overlays.default
+  ];
+
+  nixpkgs.config = {
+    allowUnfree = true;
+  };
+
+  nixpkgs.config.packageOverrides = pkgs: {
+    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
+      inherit pkgs;
+    };
+  };
+
+  nix.settings.substituters = [
+    "https://mirror.sjtu.edu.cn/nix-channels/store"
+    "https://mirrors.ustc.edu.cn/nix-channels/store"
+    "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+  ];
+  #nix.settings.substituters = lib.mkBefore [ "https://mirror.sjtu.edu.cn/nix-channels/store" "https://mirrors.ustc.edu.cn/nix-channels/store" "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store" ];
+
+  #systemd.extraConfig = "DefaultLimitNOFILE=4096";
+
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
+
+  boot = {
+    loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
+    kernel.sysctl = {
+      # Allow unprivileged users to bind to ports >=80 (instead of default 1024)
+      "net.ipv4.ip_unprivileged_port_start" = 80;
+    };
+    kernelModules = [ "tun" ];
+  };
+
+  #services.logind.settings.Login = {
+  #HandlepowerKey = "suspend";
+  #HandlepowerKeyLongPress = "reboot";
+  #};
+
+  systemd.sleep.extraConfig = ''
+    AllowSuspend=yes
+    AllowHibernation=yes
+    AllowHybridSleep=yes
+    AllowSuspendThenHibernate=yes
+    HibernateDelaySec=1h
+  '';
+
+  ##services.udev.extraRules = ''
+  ##SUBSYSTEM=="net", ACTION=="add", KERNEL=="enp2s0", RUN+="${pkgs.ethtool}/bin/ethtool -s %k wol g"
+  ##'';
+  ## Use NetworkManager to manage all network interfaces. It's easier for Wi-Fi.
+  #networking.networkmanager.enable = true;
+  ## Disable other network managers to avoid conflicts.
+  #networking.useNetworkd = false;
+  #services.connman.enable = false;
+  #systemd.network.enable = false;
+
+  ## Enable wireless support. NetworkManager will handle this.
+  ##networking.wireless.enable = true;
+
+  ## Add the firmware for your Intel Wi-Fi card
+  ##hardware.firmware = [
+  ##(pkgs.linuxPackages.iwlwifi-firmware)
+  ##];
+
+  ## Statically configure your wired ethernet connection using NetworkManager
+  ## This replaces your systemd-networkd configuration.
+  #networking.networkmanager.ensureProfiles.profiles = {
+  #"enp1s0-static" = {
+  #connection.id = "enp1s0-static";
+  #connection.type = "ethernet";
+  #connection.interface-name = "enp1s0";
+  #connection.autoconnect = true;
+  #ipv4 = {
+  #method = "manual";
+  #addresses = [ { address = "192.168.124.76"; prefix = "24"; } ];
+  #gateway = "192.168.124.1";
+  #dns = [ "8.8.8.8" "1.1.1.1" ];
+  #};
+  #"main" = {
+  #wake-on-lan = "magic";
+  #};
+  #};
+  #};
+
+  ## Your existing hostname, firewall, and nameserver settings are fine
+  #networking.hostName = "NixNAS";
+  #networking.firewall = {
+  #enable = true;
+  #allowPing = true;
+  #allowedTCPPorts = [
+  #2283 56789 3478 139 445 3389 7878 8989 9696
+  #];
+  #allowedUDPPorts = [
+  #2283 3478 137 138
+  #];
+  #trustedInterfaces = [
+  #"tun0" "wlo1" "enp1s0" "enp2s0" "tailscale0"
+  #];
+  #};
+  #networking.nameservers = [
+  #"1.1.1.1"
+  #"8.8.8.8"
+  #];
+  #services.resolved.enable = true; # Keep systemd-resolved for DNS
+
+  #systemd.network = {
+  ## 162 lines
+  #enable = true;
+  #networks."10-enp1s0" = {
+  #matchConfig.Name = "enp1s0";
+  #address = [ "192.168.124.76/24" ];
+  #gateway = [ "192.168.124.1" ];
+  #networkConfig = {
+  #DHCP = "no";
+  #IPv6AcceptRA = false;
+  #};
+  #routes = [
+  #{
+  #Gateway = "192.168.124.1";
+  #Metric = 50;
+  #}
+  #];
+  #linkConfig = {
+  #RequiredForOnline = "routable"; # Optional: makes boot wait until this is routable
+  #};
+  #};
+  #links."10-enp1s0" = {
+  #matchConfig.Name = "enp1s0";
+  #linkConfig.WakeOnLan = "magic";
+  #};
+  #wait-online.enable = true;
+  #wait-online.anyInterface = true;
+  #};
+
+  systemd.services.enable-wol = {
+    description = "Enable Wake-on-LAN";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.ethtool}/sbin/ethtool -s enp1s0 wol g";
+    };
+  };
+
+  services.connman = {
+    enable = false;
+    wifi.backend = "wpa_supplicant";
+    networkInterfaceBlacklist = [
+      "enp1s0"
+      "enp2s0"
+    ];
+    extraConfig = ''
+      [General]
+      PreferredTechnologies=ethernet,wifi
+    '';
+  };
+
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1; # -- [ACTION: ADD THIS LINE]
+
+  networking = {
+    hostName = "NixNAS";
+
+    useNetworkd = false;
+    #useDHCP = true;
+    wireless = {
+      userControlled = true;
+      enable = true;
+    };
+
+    nftables.enable = true;
+    interfaces = {
+      "enp1s0" = {
+        useDHCP = true;
+        wakeOnLan.enable = true;
+      };
+
+      # This is your LAN interface, connected to your Wi-Fi ROUTER.
+      # This is the new internal network. Your Wi-Fi router and devices will be on 192.168.2.x
+      "enp2s0" = {
+        # ----------------- [ACTION: ADD THIS NEW INTERFACE]
+        ipv4.addresses = [
+          {
+            address = "192.168.2.1"; # This is the gateway address for your router
+            prefixLength = 24;
+          }
+        ];
+      };
+    };
+
+    nat = {
+      # ------------------------------------------ [ACTION: ADD THIS ENTIRE BLOCK]
+      enable = true;
+      internalInterfaces = [ "enp2s0" ]; # Traffic from your LAN...
+      externalInterface = "enp1s0"; # ...will go out through your WAN.
+      #forwardPorts = [
+      #{
+      #sourcePort = 53;
+      #proto = "udp";
+      #destination = "192.168.2.1:53";
+      #}
+      #{
+      #sourcePort = 53;
+      #proto = "tcp";
+      #destination = "192.168.2.1:53";
+      #}
+      #{
+      #sourcePort = 53;
+      #proto = "udp";
+      #destination = "[::1]:53";
+      #}
+      #{
+      #sourcePort = 53;
+      #proto = "tcp";
+      #destination = "[::1]:53";
+      #}
+      #];
+    };
+
+    #interfaces = {
+    #enp1s0 = {
+    #wakeOnLan.enable = true;
+    #ipv4.addresses = [
+    #{
+    #address = "192.168.124.76";
+    #prefixLength = 24;
+    #}
+    #];
+    #};
+    ##enp2s0 = {
+    ##wakeOnLan.enable = false;
+    ##ipv4.addresses = [
+    ##{
+    ##address = "192.168.124.77";
+    ##prefixLength = 24;
+    ##}
+    ##];
+    ##};
+    #};
+
+    #defaultGateway = {
+    #address = "192.168.124.1";
+    #interface = "enp1s0";
+    #};
+
+    firewall = {
+      enable = true;
+      allowPing = true;
+      checkReversePath = false;
+      allowedTCPPorts = [
+        2283
+        56789
+        3478
+        139 # samba
+        445 # samba
+        3389 # XRDP
+        #28981 # paperless-ngx
+        7878 # radarr
+        8989 # sonarr
+        9696 # prowlarr
+        #22000 # Syncthing transfer
+        #22001 # Syncthing transfer (TLS)
+        #21027 # Syncthing discovery
+        #53 # DNS
+        8123 # Home Assistant
+        8300 # Home Assistant
+        22 # x2go
+        2022 # eternal-terminal
+        8880 # Zigbee2MQTT
+        3000 # grafana
+        #8888 # influxdb3 influxdb3-explorer
+        #5050 # pgAdmin4
+        #5432 # pgAdmin to postgres
+        11111 # open-webui
+        18789 # claw
+      ];
+      allowedUDPPorts = [
+        #53 # DNS
+        #21027  # Syncthing Discovery
+        67 # DHCP
+        2283
+        3478
+        137 # samba
+        138 # samba
+        1900 # UPnP Alexa
+        8300 # Home Assistant
+      ]; # 2283:immich 3478 8080 8443 nextcloud
+      trustedInterfaces = [
+        "tun0"
+        "Mihomo"
+        "wlo1"
+        "enp1s0"
+        "enp2s0"
+        "tailscale0"
+      ];
+      extraForwardRules = ''
+        ip protocol udp udp dport 443 reject
+      '';
+      #extraCommands = ''
+      #iptables -A OUTPUT -j ACCEPT
+      #'';
+      #extraStopCommands = ''
+      #iptables -D OUTPUT -j ACCEPT || true
+      #'';
+    };
+
+    extraHosts = ''
+      192.168.2.1 openclaw.local
+    '';
+    #192.168.124.15 nextcloud.tailffcc5b.ts.net
+    #'';
+
+    #proxy = {
+    #default = "http://192.168.124.9:10808/";
+    ##noProxy = "127.0.0.1,localhost,internal.domain";
+    #};
+
+    #useHostResolvConf = false;
+    #resolvconf = {
+    #enable = true;
+    ##useLocalResolver = true;
+    #};
+    nameservers = [
+      "127.0.0.1"
+      #"192.168.2.1"
+      #"8.8.8.8"
+      #"1.1.1.1"
+    ];
+    #nameservers = [
+    #"9.9.9.9"
+    #"149.112.112.112"
+    #];
+
+    #wireless = {
+    #iwd = {
+    #enable = false;
+    #settings = {
+    #General = {
+    #EnableNetworkConfiguration = true;
+    #};
+    #Network = {
+    #EnableIPv6 = true;
+    #RoutePriorityOffset = 300;
+    #};
+    #Settings = {
+    #AutoConnect = true;
+    #};
+    #};
+    #};
+    #};
+    networkmanager = {
+      enable = false;
+      #wifi.backend = "iwd";
+      #dns = "systemd-resolved";
+      dns = "none";
+    };
+  };
+
+  services.kea.dhcp4 = {
+    # ---------------- [ACTION: USE THIS CORRECTED BLOCK]
+    enable = false;
+    settings = {
+      # Specifies which network interfaces Kea should listen on.
+      interfaces-config = {
+        interfaces = [ "enp2s0" ];
+      };
+
+      # Configures where lease information is stored.
+      # "memfile" is simplest for this use case.
+      lease-database = {
+        type = "memfile";
+        #persist = true;
+        #name = "/var/lib/kea/dhcp4.leases";
+        #lfc-interval = 3600;
+      };
+
+      #valid-lifetime = 4000;
+      #renew-timer = 1000;
+      #rebind-time = 2000;
+
+      # Defines the IP address range (pool) to assign to clients (your router).
+      subnet4 = [
+        {
+          id = 1;
+          subnet = "192.168.2.0/24";
+
+          #pools = [ { pool = "192.168.2.100 - 192.168.2.200"; } ];
+          pools = [ { pool = "192.168.2.100-192.168.2.200"; } ];
+
+          # Tells the client (your router) what the gateway IP is.
+          option-data = [
+            {
+              name = "routers";
+              data = "192.168.2.1";
+            }
+            {
+              name = "domain-name-servers";
+              data = "192.168.2.1";
+            }
+          ];
+        }
+      ];
+
+    };
+  };
+
+  services.dnsmasq = {
+    enable = true;
+    settings = {
+      ## Listen on localhost and LAN
+      listen-address = [
+        "127.0.0.1"
+        "192.168.2.1"
+      ];
+
+      server = [
+        #"9.9.9.9" # Quad9
+        #"149.112.112.112" # Quad9 secondary
+        #"1.1.1.1" # Cloudflare
+        #"8.8.8.8" # Google
+        #"127.0.0.1#7897"
+        "127.0.0.1#1053"
+        #"9.9.9.9" # Quad9
+      ];
+      #port = 0;
+      # DHCP range for clients
+      #dhcp-range = [ "192.168.2.100,192.168.2.200,255.255.255.0,24h" ];
+      dhcp-range = [ "192.168.2.100,192.168.2.200,24h" ];
+
+      # Push default gateway & DNS to clients
+      dhcp-option = [
+        "option:router,192.168.2.1"
+        "option:dns-server,192.168.2.1"
+      ];
+      no-resolv = true;
+      domain-needed = true;
+      bogus-priv = true;
+      cache-size = 1000;
+      #no-hosts = false;
+      #expand-hosts = true;
+    };
+  };
+  services.resolved = {
+    enable = false;
+    #fallbackDns = [
+    #"8.8.8.8"
+    #"1.1.1.1"
+    #];
+    #FallbackDNS=1.1.1.1 8.8.8.8
+    #DNS=8.8.8.8 1.1.1.1
+
+    #settings = ''
+    #DNS=8.8.8.8 1.1.1.1
+    #FallbackDNS=9.9.9.9 149.112.112.112
+    #Domains=~.
+    #DNSSEC=allow-downgrade
+    #DNSStubListener=yes
+    #DNSStubListenerExtra=192.168.2.1
+    #ResolveUnicastSingleLabel=yes
+    #'';
+    settings = {
+      Resolve = {
+        DNS = [
+          "8.8.8.8"
+          "1.1.1.1"
+        ];
+        FallbackDNS = [
+          "9.9.9.9"
+          "149.112.112.112"
+        ];
+        Domains = [ "~." ];
+        DNSSEC = "allow-downgrade";
+        DNSStubListener = "yes";
+        DNSStubListenerExtra = [ "192.168.2.1" ];
+        ResolveUnicastSingleLabel = "yes";
+      };
+    };
+    #fallbackDns = [ "127.0.0.1" ];
+    #extraConfig = ''
+    #DNS=127.0.0.1
+    #DNSStubListener=yes
+    #Domains=~.
+    #'';
+  };
+
+  services.openssh = {
+    enable = true;
+    ports = [ 22 ];
+    settings = {
+      PasswordAuthentication = true;
+      KbdInteractiveAuthentication = false;
+      AllowUsers = [ "py" ]; # Allows all users by default. Can be [ "user1" "user2" ]
+      UseDns = false;
+      X11Forwarding = true;
+      PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+    };
+  };
+  programs.mosh = {
+    enable = true;
+    openFirewall = true;
+  };
+  #services.eternal-terminal = {
+  #enable = true;
+  #};
+  #systemd.services.eternal-terminal.serviceConfig = {
+  #Type = lib.mkForce "simple";
+  #ExecStart = lib.mkForce "${pkgs.eternal-terminal}/bin/etserver --cfgfile=/etc/et.cfg";
+  #Restart = "on-failure";
+  #};
+
+  systemd.services.dockerupdate = {
+    description = "Update Docker containers";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = ''
+        /run/current-system/sw/bin/bash "/home/py/Dropbox (Maestral)/mac_config/Scripts/dockerupdate.sh"
+      '';
+    };
+    path = [
+      pkgs.docker
+      pkgs.systemd
+      pkgs.bash
+      pkgs.rsync
+    ];
+  };
+  systemd.timers.dockerupdate = {
+    description = "Run Docker update script every Saturday at 2 AM";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Sat *-*-* 02:00:00";
+      Persistent = true;
+    };
+  };
+
+  systemd.services.docker-network-pgnet = {
+    description = "Ensure Docker network pgnet exists";
+    after = [
+      "docker.service"
+      "docker.socket"
+    ];
+    requires = [ "docker.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "/run/current-system/sw/bin/sh -lc '${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || ${pkgs.docker}/bin/docker network create --driver bridge pgnet' ";
+    };
+    wantedBy = [ "multi-user.target" ];
+  };
+  #system.activationScripts."docker-network-pgnet" = {
+  #text = ''${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || \ ${pkgs.docker}/bin/docker network create --driver bridge pgnet '';
+  #}; # this also works, starts at every nixos switch
+
+  virtualisation.oci-containers = {
+    backend = "docker";
+
+    containers = {
+
+      #openclaw = {
+      #image = "ghcr.io/openclaw/openclaw:latest";
+
+      #volumes = [
+      #"/storage/openclaw/config:/config"
+      #"/storage/openclaw/state:/state"
+      #"/storage/openclaw/workspace:/workspace"
+      #];
+
+      #environment = {
+      #OPENCLAW_CONFIG = "/config/config.yaml";
+      #};
+
+      #extraOptions = [
+      #"--network=host"
+      #];
+      #};
+
+      homeassistant = {
+        image = "ghcr.io/home-assistant/home-assistant:latest";
+        #volumes = [ "home-assistant:/config" ];
+        volumes = [ "/storage/home-assistant:/config" ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          "--device=/dev/ttyUSB0:/dev/ttyUSB0"
+          "--privileged"
+        ];
+        #ports = [ "8123:8123" ];
+        #networks = [ "pgnet" ];
+      };
+
+      victoriametrics = {
+        image = "victoriametrics/victoria-metrics:latest";
+        volumes = [ "/storage/victoriametrics:/storage" ];
+        ports = [ "8428:8428" ];
+        networks = [ "pgnet" ];
+        extraOptions = [ "--name=victoriametrics" ];
+        cmd = [
+          "-storageDataPath=/storage"
+          "-retentionPeriod=10y"
+          "-selfScrapeInterval=1m"
+        ];
+      };
+
+      #influxdb3 = {
+      ##image = "influxdb:3-core"; # Standard v3 image
+      ##image = "influxdb:latest"; # Standard v3 image
+      #image = "influxdb:3-enterprise";
+      #volumes = [ "/storage/influxdb3:/var/lib/influxdb3" ];
+      #ports = [ "8181:8181" ]; # Port 8181 is default for v3
+      #networks = [ "pgnet" ];
+      #extraOptions = [ "--name=influxdb3" ];
+      #cmd = [
+      #"influxdb3"
+      #"serve"
+      #"--node-id=NixNAS"
+      #"--cluster-id=NixNAS-Cluster"
+      #"--license-email=pierrez1984@gmail.com"
+      #"--object-store=file"
+      #"--data-dir=/var/lib/influxdb3"
+      #];
+      #};
+      #influxdb3-explorer = {
+      #image = "influxdata/influxdb3-ui:latest";
+      #ports = [
+      #"8888:80"
+      #];
+      #extraOptions = [
+      #"--name=influxdb3-explorer"
+      #"--network=pgnet"
+      #];
+      #};
+
+      #postgres = {
+      ##image = "postgres:latest";
+      #image = "postgres:16.3";
+      #environment = {
+      #POSTGRES_DB = "homeassistant";
+      #POSTGRES_USER = "ha";
+      #POSTGRES_PASSWORD = "ha_password";
+      #};
+      #volumes = [ "/storage/postgres:/var/lib/postgresql/data" ];
+      #ports = [ "5432:5432" ]; # expose to host so HA can reach it
+      #networks = [ "pgnet" ];
+      #};
+      #pgadmin = {
+      #image = "dpage/pgadmin4";
+      #environment = {
+      #PGADMIN_DEFAULT_EMAIL = "pierrez1984@gmail.com";
+      #PGADMIN_DEFAULT_PASSWORD = "admin";
+      #};
+      #ports = [ "5050:80" ];
+      #networks = [ "pgnet" ];
+      #};
+
+      #influxdb2 = {
+      #image = "influxdb:latest";
+      #volumes = [ "/storage/influxdb2:/var/lib/influxdb2" ];
+      #ports = [ "8086:8086" ]; # expose API
+      #networks = [ "pgnet" ];
+      #};
+
+      mosquitto = {
+        image = "eclipse-mosquitto:latest";
+        volumes = [
+          "/storage/mosquitto/config:/mosquitto/config"
+          "/storage/mosquitto/data:/mosquitto/data"
+          "/storage/mosquitto/log:/mosquitto/log"
+        ];
+        ports = [
+          "1883:1883" # MQTT broker port
+          "9001:9001" # optional WebSocket port
+        ];
+        #extraOptions = [ "--network=host" ];
+        networks = [ "pgnet" ];
+      };
+
+      zigbee2mqtt = {
+        image = "koenkk/zigbee2mqtt:latest";
+        volumes = [ "/storage/zigbee2mqtt:/app/data" ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          "--device=/dev/serial/by-id/usb-Nabu_Casa_Home_Assistant_Connect_ZBT-1_28952146e210f0119010aae541f80dde-if00-port0:/dev/ttyZigbee"
+          #"--device=/dev/ttyUSB0:/dev/ttyUSB0"
+        ];
+      };
+
+      node-red = {
+        image = "nodered/node-red:latest";
+        ports = [ "1880:1880" ];
+        volumes = [ "node-red-data:/data" ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          "--cap-add=NET_BIND_SERVICE"
+        ];
+      };
+
+      #matter-server = {
+      #image = "ghcr.io/home-assistant-libs/python-matter-server:stable";
+      #volumes = [
+      #"matter-server:/data"
+      #"/run/dbus:/run/dbus"
+      #];
+      #environment = {
+      #TZ = "Asia/Shanghai";
+      #};
+      #extraOptions = [ "--network=host" ];
+      #};
+
+      grafana = {
+        image = "grafana/grafana:latest";
+        ports = [ "3000:3000" ];
+        networks = [ "pgnet" ];
+        volumes = [
+          "/storage/grafana:/var/lib/grafana"
+        ];
+        environment = {
+          GF_SERVER_ROOT_URL = "http://192.168.2.1:3000";
+          GF_RENDERING_SERVER_URL = "http://grafana-renderer:8081/render";
+          GF_RENDERING_CALLBACK_URL = "http://grafana:3000/";
+          #GF_RENDERING_SERVER_URL = "http://grafana-renderer:8081/render";
+          #GF_RENDERING_CALLBACK_URL = "http://192.168.2.1:3000/";
+          GF_RENDERING_SERVER_AUTH_TOKEN = "supersecret-render-token";
+          TZ = "Asia/Shanghai";
+        };
+      };
+      grafana-renderer = {
+        image = "grafana/grafana-image-renderer:latest";
+        networks = [ "pgnet" ];
+        environment = {
+          ENABLE_METRICS = "true";
+          RENDERING_MODE = "server";
+          RENDERING_SERVER_AUTH_TOKEN = "supersecret-render-token";
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--cap-add=SYS_ADMIN"
+        ];
+      };
+    };
+  };
+
+  #services.pgadmin = {
+  #enable = true;
+  #initialEmail = "pierrez1984@gmail.com";
+  #initialPasswordFile = "/home/py/Dropbox (Maestral)/mac_config/Scripts/pgadmin-pass";
+  #};
+
+  services.grafana = {
+    enable = false;
+
+    settings = {
+      server = {
+        http_addr = "0.0.0.0";
+        domain = "192.168.2.1";
+        root_url = "http://192.168.2.1:3000/";
+      };
+      # Clear and consistent rendering config
+      "rendering" = {
+        server_url = "http://127.0.0.1:8081/render";
+        callback_url = "http://192.168.2.1:3000/";
+      };
+      #"plugin.grafana-image-renderer" = {
+      #rendering_server_url = "http://localhost:8081/render";
+      #rendering_callback_url = "http://localhost:3000/";
+      #};
+
+    };
+    provision = {
+      enable = true;
+      datasources.settings = {
+        apiVersion = 1;
+        datasources = [
+          {
+            name = "InfluxDB2";
+            type = "influxdb";
+            url = "http://127.0.0.1:8086";
+            access = "proxy";
+            jsonData = {
+              version = "Flux";
+              organization = "ha_py";
+              defaultBucket = "homeassistant";
+            };
+            secureJsonData = {
+              token = "j2YFRlFlkfExuv7RSknZyceQrZcWTPRiM4D9neOYJmXPnOwxw3duKIftzVhxDZfcxj_U-5TbI99iwvFjDk3GRA==";
+            };
+          }
+          {
+            name = "Postgres-HA";
+            type = "postgres";
+            url = "127.0.0.1:5432";
+            access = "proxy";
+            user = "ha";
+            jsonData = {
+              database = "homeassistant";
+              sslmode = "disable";
+            };
+            #secureJsonData = {
+            ##passwordFile = "/home/py/Dropbox (Maestral)/mac_config/Scripts/pgadmin-pass";
+            #password = "ha_password";
+            #};
+          }
+        ];
+      };
+    };
+  };
+  services.grafana-image-renderer = {
+    enable = false;
+    provisionGrafana = true;
+    settings = {
+      #server.addr = "127.0.0.1:8081";
+      browser = {
+        #path = "${pkgs.chromium}/bin/chromium";
+        #args = [ "--no-sandbox" "--disable-dev-shm-usage" ];
+      };
+
+    };
+  };
+
+  services.caddy = {
+    enable = false;
+    virtualHosts."192.168.2.1" = {
+      extraConfig = ''
+        tls internal
+        reverse_proxy localhost:18789
+      '';
+    };
+  };
+
+  services.nginx = {
+    enable = false;
+
+    virtualHosts."_" = {
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = 80;
+        }
+      ];
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8123";
+        proxyWebsockets = true;
+        extraConfig = ''
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        '';
+      };
+
+      locations."/description.xml" = {
+        proxyPass = "http://127.0.0.1:8123/description.xml";
+      };
+    };
+  };
+  #services.nginx = {
+  #enable = true;
+  #virtualHosts."_" = {
+  #listen = [
+  #{
+  #addr = "0.0.0.0";
+  #port = 80;
+  #}
+  #];
+
+  #locations."/" = {
+  #proxyPass = "http://127.0.0.1:8123"; # Forward to Home Assistant
+  #proxyWebsockets = true;
+
+  #extraConfig = ''
+  #proxy_set_header Host $host;
+  #proxy_set_header X-Real-IP $remote_addr;
+  #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  #proxy_set_header Upgrade $http_upgrade;
+  #proxy_set_header Connection "upgrade";
+  #'';
+  #};
+  #};
+  #};
+  #services.nginx = {
+  #enable = true;
+  #virtualHosts."_" = {
+  #listen = [
+  #{
+  #addr = "0.0.0.0";
+  #port = 80;
+  #}
+  #];
+  #locations."/" = {
+  #proxyPass = "http://127.0.0.1:8300"; # Forward to HA's port
+  #proxyWebsockets = true;
+  ## The raw Nginx commands go inside the extraConfig string.
+  #extraConfig = ''
+  #proxy_set_header Host $host;
+  #proxy_set_header X-Real-IP $remote_addr;
+  #'';
+  #};
+  #};
+  #};
+  #virtualisation.oci-containers = {
+  ##backend = "podman";
+  #backend = "docker";
+  #containers.homeassistant = {
+  #volumes = [ "home-assistant:/config" ];
+  #environment.TZ = "Asia/Shanghai";
+  #image = "ghcr.io/home-assistant/home-assistant:stable";
+  #extraOptions = [
+  #"--network=host"
+  #];
+  #};
+  #};
+
+  services.zigbee2mqtt = {
+    enable = false;
+    settings = {
+      homeassistant.enabled = config.services.home-assistant.enable;
+      permit_join = true;
+      serial = {
+        port = "/dev/ttyUSB0";
+        adapter = "ezsp";
+      };
+      mqtt = {
+        server = "mqtt://localhost:1883";
+      };
+      frontend = {
+        port = 8880;
+      };
+    };
+  };
+
+  services.home-assistant = {
+    enable = false;
+    extraComponents = [
+      "zha"
+      "emulated_hue"
+      "mqtt"
+    ];
+    customComponents = [
+      #pkgs.home-assistant-custom-components.hacs
+    ];
+    #customComponents = with pkgs.home-assistant-custom-components; [
+    #hacs
+    #];
+    config = {
+      default_config = { };
+      emulated_hue = {
+        listen_port = 8300;
+        expose_by_default = true;
+      };
+      mqtt = {
+        broker = "localhost";
+        port = 1883;
+      };
+    };
+    #extraPackages =
+    #python3Packages: with python3Packages; [
+    #aiohttp
+    #pyyaml
+    #requests
+    #multidict
+    #yarl
+    #typing-extensions
+    #];
+    #extraPackages =
+    #ps: with ps; [
+    #];
+  };
+
+  services.mosquitto = {
+    enable = false;
+    listeners = [
+      {
+        port = 1883;
+        #acl = [ "pattern readwrite #" ];
+        acl = [ "user homeassistant" ]; # Requires user setup
+        omitPasswordAuth = true;
+        settings.allow_anonymous = true;
+      }
+    ];
+  };
+
+  services.immich = {
+    enable = false;
+    port = 2283;
+  };
+
+  systemd.tmpfiles.rules = [
+    #"d /var/log/samba 0755 root root"
+    "d /storage/myfiles 0771 root sambashare"
+    "d /storage/myfiles/movies 2755 sambauser moviegroup"
+
+    # ADD THIS LINE: It ensures the directory for Samba's private data has the
+    # correct, highly restrictive permissions that the daemon expects.
+    #"d /var/lib/samba/private 0700 root root -"
+  ];
+
+  services.samba = {
+    enable = true;
+    openFirewall = true;
+
+    settings = {
+      global = {
+        security = "user";
+        #"log level" = "auth:10 passdb:10 all:5";
+        #"log file" = "/var/log/samba/log.%m"; # THIS IS CRUCIAL
+        #"max log size" = "50000";
+        ##"unix password sync" = "no";
+        #"enable pam" = "no";
+        #"idmap config *" = "backend tdb";
+        "workgroup" = "WORKGROUP";
+        "server string" = "smbnix";
+        "netbios name" = "smbnix";
+        #"hosts allow" = "192.168.124. 100.64.0.0/10 127.0.0.1 localhost"; #STANDALONE
+        "hosts allow" = "127.0.0.1 192.168.1.0/24 192.168.2.0/24 192.168.124.0/24 100.64.0.0/10"; # ROUTER
+        "hosts deny" = "0.0.0.0/0";
+        "guest account" = "nobody";
+        "map to guest" = "never";
+        "name resolve order" = "bcast host";
+        "min protocol" = "SMB2";
+        "max protocol" = "SMB3";
+        "host msdfs" = "no";
+      };
+
+      "myfiles" = {
+        path = "/storage/myfiles";
+        browseable = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
+        "create mask" = "0664"; # Was 0660.  (rw-rw-r--)
+        "directory mask" = "0775"; # Was 0770.  (rwxrwxr-x)
+        #"force user" = "sambauser";
+        #"force group" = "sambashare";
+        #"valid users" = [ "@sambashare" ]; #can't turn on!!!!why?????
+        "valid users" = "@sambashare";
+
+        "nt acl support" = "no";
+        "inherit acls" = "no";
+        "map acl inherit" = "no";
+      };
+
+      "movies" = {
+        path = "/storage/myfiles/movies";
+        browseable = "yes";
+        "read only" = "yes";
+        "guest ok" = "no";
+        #"valid users" = "movie";
+        "valid users" = "@moviegroup";
+      };
+    };
+  };
+
+  services.samba-wsdd = {
+    enable = true;
+    openFirewall = true;
+  };
+
+  virtualisation.docker = {
+    enable = true;
+
+    extraOptions = "--iptables=false";
+
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
+    };
+
+    autoPrune = {
+      enable = true;
+      dates = "weekly";
+    };
+
+    daemon.settings = {
+      ## Use port 20172 for HTTP protocol with "Rule of Splitting Traffic"
+      #"http-proxy" = "http://127.0.0.1:20172";
+      #"https-proxy" = "http://127.0.0.1:20172";
+      ## It's important to tell Docker not to proxy internal Docker network traffic.
+      ## 172.17.0.0/16 is the default Docker bridge.
+      ## 172.20.0.0/16 is the range for 'nextcloud-aio' network in your compose.yml.
+      #"no-proxy" = "localhost,127.0.0.1,172.17.0.0/16,172.20.0.0/16";
+    };
+    #daemon.settings = {
+    #dns = [
+    #"8.8.8.8"
+    #"1.1.1.1"
+    #];
+    #};
+  };
+
+  time.timeZone = "Asia/Shanghai";
+
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  i18n.extraLocaleSettings = {
+    LC_ADDRESS = "en_US.UTF-8";
+    LC_IDENTIFICATION = "en_US.UTF-8";
+    LC_MEASUREMENT = "en_US.UTF-8";
+    LC_MONETARY = "en_US.UTF-8";
+    LC_NAME = "en_US.UTF-8";
+    LC_NUMERIC = "en_US.UTF-8";
+    LC_PAPER = "en_US.UTF-8";
+    LC_TELEPHONE = "en_US.UTF-8";
+    LC_TIME = "en_US.UTF-8";
+  };
+  i18n.inputMethod = {
+    type = "fcitx5";
+    enable = true;
+    fcitx5 = {
+      waylandFrontend = true;
+      addons = with pkgs; [
+        fcitx5-gtk
+        qt6Packages.fcitx5-chinese-addons
+        fcitx5-pinyin-zhwiki
+        fcitx5-nord
+      ];
+    };
+  };
+
+  services.seatd.enable = true;
+
+  environment.sessionVariables = {
+    QT_QPA_PLATFORMTHEME = "qt5ct";
+    QT_NO_PLASMA_INTEGRATION = "1";
+    QT_STYLE_OVERRIDE = "Fusion";
+  };
+
+  services.haveged.enable = true;
+  programs.dconf.enable = true;
+
+  services.getty.autologinUser = "py";
+  #security.polkit.enable = true;
+  #security.pam.services.gdm-password.enableGnomeKeyring = true;
+  programs.seahorse.enable = false;
+  #services.xserver.windowManager.twm.enable = true;
+  services = {
+    xserver = {
+      enable = true;
+      displayManager = {
+        startx.enable = true;
+        lightdm.enable = false;
+      };
+      desktopManager = {
+        xfce.enable = false;
+        mate.enable = false;
+        lxqt.enable = false;
+      };
+      windowManager = {
+        openbox.enable = false;
+      };
+    };
+    displayManager = {
+      enable = true;
+      #defaultSession = "xfce";
+      autoLogin = {
+        enable = false;
+        user = "py";
+      };
+      gdm.enable = false;
+      sddm.enable = false;
+    };
+    desktopManager = {
+      plasma6 = {
+        enable = true;
+      };
+      gnome = {
+        enable = false;
+      };
+    };
+    libinput.enable = true;
+  };
+
+  services.x2goserver.enable = false;
+  services = {
+    xrdp = {
+      enable = true;
+      defaultWindowManager = "startplasma-x11";
+      #defaultWindowManager = "startlxqt";
+      #defaultWindowManager = "startxfce4";
+      #defaultWindowManager = "mate-session";
+
+      openFirewall = true;
+      #extraConfDirCommands = ''
+      #cat <<EOF > $out/custom-globals.ini
+      #[Globals]
+      #ListenAddress=0.0.0.0
+      #EnableSyslog=true
+      #EnableConsole=false
+      #MaxSessions=10
+
+      #[Xvnc]
+      #name=Xvnc
+      #lib=libvnc.so
+      #username=ask
+      #password=ask
+      #ip=127.0.0.1
+      #port=-1
+      #code=20
+      #EOF
+
+      ##cat <<EOF > $out/custom-sesman.ini
+      ##[Sessions]
+      ##X11DisplayOffset=20
+      ##EOF
+      #'';
+    };
+  };
+
+  #services.gnome.gnome-remote-desktop.enable = true;
+
+  security.sudo = {
+    extraConfig = ''
+      Defaults:py timestamp_timeout=600
+      Defaults:py timestamp_type=global
+    '';
+    extraRules = [
+      {
+        users = [ "py" ];
+        commands = [
+          {
+            command = "/run/current-system/sw/bin/systemctl poweroff";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/poweroff";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/systemctl suspend";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/systemctl sleep";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
+  };
+
+  systemd.targets.sleep.enable = true;
+  systemd.targets.suspend.enable = true;
+  systemd.targets.hibernate.enable = true;
+  systemd.targets.hybrid-sleep.enable = false;
+
+  hardware.intel-gpu-tools.enable = true;
+
+  services.open-webui = {
+    enable = true;
+    port = 11111;
+    host = "0.0.0.0";
+    environment = {
+      ENABLE_OLLAMA = "False";
+      HOME = "/var/lib/open-webui";
+    };
+  };
+
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-compute-runtime
+      vulkan-loader
+      vulkan-validation-layers
+    ];
+  };
+
+  services.ollama = {
+    enable = false;
+    package = pkgs.ollama-vulkan;
+    models = "/storage/ollama";
+  };
+
+  power.ups = {
+    enable = true;
+    mode = "standalone";
+
+    ups."myups" = {
+      driver = "usbhid-ups";
+      port = "auto";
+      description = "My NAS UPS";
+      directives = [
+        "override.ups.delay.shutdown = 1800"
+        "override.ups.delay.start = 120"
+      ];
+    };
+
+    upsmon.monitor."myups" = {
+      system = "myups@localhost";
+      user = "py";
+      type = "master";
+    };
+
+    users."py" = {
+      upsmon = "primary";
+      passwordFile = "/home/py/.config/secrets/nut-password";
+    };
+  };
+
+  hardware.uinput.enable = true;
+
+  programs.ydotool.enable = true;
+
+  services.printing.enable = true;
+
+  services.usbmuxd = {
+    enable = true;
+    package = pkgs.usbmuxd2;
+  };
+
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings = {
+      General = {
+        Experimental = true;
+      };
+    };
+  };
+
+  services.blueman.enable = true;
+
+  security.rtkit.enable = true;
+
+  services.pipewire = {
+    enable = true;
+    audio.enable = true;
+    pulse.enable = true;
+    alsa = {
+      enable = true;
+      support32Bit = true;
+    };
+    jack.enable = true;
+    extraConfig.pipewire = {
+      "10-clock-rate" = {
+        "context.properties" = {
+          "default.clock.rate" = 44100;
+          "default.clock.quantum" = 1024;
+          "default.clock.min-quantum" = 1024;
+          "default.clock.max-quantum" = 1024;
+        };
+      };
+    };
+    wireplumber = {
+      enable = true;
+      extraConfig.bluetoothEnhancements = {
+
+        "monitor.bluez.properties" = {
+          "bluez5.default.rate" = 44100;
+          "bluez5.enable-sbc-xq" = true;
+          "bluez5.enable-msbc" = true;
+          "bluez5.enable-hw-volume" = true;
+          "bluez5.roles" = [
+            "a2dp_sink"
+            "a2dp_source"
+            "bap_sink"
+            "bap_source"
+            "hfp_hf"
+            "hfp_ag"
+            "hsp_hs"
+            "hsp_ag"
+          ];
+        };
+
+        "monitor.bluez.rules" = {
+          matches = [
+            {
+              "node.name" = "~bluez_input.*";
+            }
+            {
+              "node.name" = "~bluez_output.*";
+            }
+          ];
+          actions = {
+            update-props = {
+              "session.suspend-timeout-seconds" = 0;
+            };
+          };
+        };
+
+      };
+    };
+  };
+
+  services.tailscale.enable = true;
+  services.tailscale.extraUpFlags = [ "--accept-dns=false" ];
+
+  #services.nextcloud = {
+  #enable = false;
+  #package = pkgs.nextcloud31;
+  #hostName = nextcloudHostname;
+  #config = {
+  ##adminuser = "admin";
+  #adminpassFile = "/var/nextcloudpass/nextcloud-admin-pass";
+  #dbtype = "pgsql";
+  #};
+  #settings = {
+  #overwritehost = nextcloudHostname; # Tell Nextcloud its external host
+  #overwriteprotocol = "https"; # Tell Nextcloud it's accessed via HTTPS
+  #trusted_proxies = [ "127.0.0.1" ]; # Nginx is proxying from localhost
+  #trusted_domains = [
+  #nextcloudHostname
+  #nextcloudIpAddress
+  #];
+  #};
+  #https = false;
+  ##datadir = "${nextcloudPath}";
+
+  #database.createLocally = true;
+  #phpOptions = {
+  ##"memory_limit" = "1G";
+  #"opcache.enable" = "true";
+  #"opcache.interned_strings_buffer" = "16";
+  #"opcache.memory_consumption" = "128";
+  #"opcache.save_comments" = "1";
+  #"opcache.revalidate_freq" = "1";
+  #};
+  #configureRedis = true;
+
+  #nginx.recommendedHttpHeaders = true;
+  #};
+
+  #security.acme = {
+  #certs."${nextcloudHostname}".email = "pierrez1984@gmail.com";
+
+  #acceptTerms = true;
+
+  ## Optionally, set a staging environment for testing before going live
+  ## useStaging = true;  # Uncomment to use Let's Encrypt's staging environment (for testing)
+  #};
+
+  #services.nginx = {
+  #enable = false;
+  #virtualHosts."${nextcloudHostname}" = {
+  ##root = "${nextcloudPath}";
+  #serverName = "${nextcloudHostname}";
+
+  ##enableACME = true; # Enable automatic SSL certificate from Let's Encrypt
+
+  #sslCertificate = "/etc/nginx/ssl/nextcloud.crt";
+  #sslCertificateKey = "/etc/nginx/ssl/nextcloud.key";
+  #listen = [
+  #{
+  #port = 80;
+  #addr = "0.0.0.0";
+  #} # Listen on all IP addresses for HTTP
+  #{
+  #port = 443;
+  #ssl = true;
+  #addr = "0.0.0.0";
+  #} # Listen on all IP addresses for HTTPS
+  #];
+  #http2 = true;
+  #http3 = true;
+  #forceSSL = true; # Redirect HTTP to HTTPS
+  #locations."/" = {
+  #proxyPass = "unix:/run/php/php7.4-fpm.sock|fcgi://localhost";
+  #tryFiles = "$uri $uri/ =404";
+  ##proxySetHeader = [
+  ##"Host $host"
+  ##"X-Real-IP $remote_addr"
+  ##"X-Forwarded-For $proxy_add_x_forwarded_for"
+  ##];
+  #};
+  #};
+  #};
+
+  # Define a virtual host in Nginx for your Nextcloud instance
+  #services.nginx.virtualHosts."${nextcloudHostname}" = {
+  ## Listen for HTTPS traffic on port 443
+  #listenAddresses = [
+  ## Listen for HTTPS traffic on port 443 with SSL enabled
+  #{
+  #addr = "0.0.0.0";
+  #port = 443;
+  #ssl = true;
+  #}
+  ## Listen for HTTP traffic on port 80 (for redirect to HTTPS)
+  #{
+  #addr = "0.0.0.0";
+  #port = 80;
+  #}
+  #];
+  ## Path to your self-signed SSL certificate and key
+  #sslCertificate = "/etc/ssl/nextcloud/nextcloud.crt";
+  #sslCertificateKey = "/etc/ssl/nextcloud/nextcloud.key";
+
+  ## Proxy requests to the Nextcloud PHP-FPM socket.
+  ## Use lib.mkForce to ensure this definition takes precedence if the Nextcloud module
+  ## tries to define its own location block for this virtual host.
+  #locations."/" = lib.mkForce {
+  #proxyPass = "unix:${config.services.nextcloud.phpFpmSocket}";
+  #recommendedProxySettings = true;
+  #};
+
+  #extraConfig = ''
+  #if ($scheme = http) {
+  #return 301 https://$host$request_uri;
+  #}
+  #rewrite /.well-known/carddav /remote.php/dav permanent;
+  #rewrite /.well-known/caldav /remote.php/dav permanent;
+  #'';
+  #};
+
+  services.postgresql = {
+    enable = false;
+  };
+
+  fonts.packages = with pkgs; [
+    # https://wiki.archlinux.org/title/Font_configuration
+    font-awesome
+    uw-ttyp0
+    gohufont
+    terminus_font_ttf
+    profont
+    efont-unicode
+    noto-fonts-color-emoji
+    dina-font
+    fanwood
+
+    nerd-fonts.fira-code
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.iosevka
+    nerd-fonts.hack
+
+    # for Chinese
+    source-han-serif
+    source-han-sans
+
+    vista-fonts
+    ubuntu-classic
+  ];
+
+  users.users.py = {
+    isNormalUser = true;
+    description = "py";
+    group = "users";
+    shell = pkgs.zsh;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINhppLSZ+s+f27ZY7YkDwCQFF5dILpqV9uqj1UmyuPqs py@nixos"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHgx0PpBOGsgLTIQqlxparz3/fAb4vymWzjgtxa0Xod4 py@PY-MAC.local"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICkvTueVFGc4JKPKnlWQG6V8RCa5wR/Wbp93yRe8umDK py@pixel8"
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoyDQ+L3UX+yMS/ADOP8AtrLlOlHKDsRbvLeahBPuVQ0mW0Eaw0FvluUa0GF0E79lAMfKkAfHru4TdIGhGI/kusYGD63wYritUQuqQmIOGAbAdfckWdVTc9tL6lq7X4WVtIhAC/Fn66aomQgadq1lwFJoJFswipXaKPjEfbt6x7RYpNTTcjjE9goChgT6j6paWvcn/bpWW1sIi7MgijX6eFd0q8bNQW1YyKAGPjQRAiI+awcE3osdGxoFyiM4d5H2vWiMaGjupgyAFkz/OUHgFd5Vl8aCyq4i/NgRSeeqVT780VdY51o6wf5w5/3QO5yMrkoZpGwyzoIuGdS26j2TH py@SC-201207261047"
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCcfiSyRLzAD1I3tAVslYs/5z+Wb4EXsBRpgEw23helXAq0L5j8GDZv9hMHaCtVX9O0xM6+9cdMaLae9nnOcPHWom1QblH87sXUzVI3jBN5JOmoZ6Fc6t1tly2qmB+6ZuTGSodqmFRxnps2T+s10LRI4FXin987JeSx483gbuJxiO4fW9Pg3mKyHMk/wT2A/ldqSIYfYZqQVy9/dU5MeShdTe3SLyu9gQyxe+ySa4pHABS9JK9gsb3HQ+oujpVG+pfwjQjohth+8gGfJizOJJJ9OUJKtdFRr/YkUeAIaDPM8Mnm2cW2G2PhXvLGtQG1MqvUxadVAPOct65JOdvYHNiJ ConnectBot@Pixel8"
+    ];
+    extraGroups = [
+      "input"
+      "evdev"
+      "uinput"
+      "networkmanager"
+      "wheel"
+      "docker"
+      "ydotool"
+      "deluge"
+      "audio"
+      "video"
+      "jackaudio"
+      "seat"
+      "sambashare"
+      "moviegroup"
+      "dialout"
+    ];
+    packages = with pkgs; [
+    ];
+  };
+
+  users.groups.sambashare = { };
+  users.users.sambauser = {
+    isNormalUser = true;
+    group = "sambashare";
+    extraGroups = [
+      "moviegroup"
+    ];
+    description = "Samba user for local usage.";
+  };
+
+  users.groups.moviegroup = { };
+  users.users.movie = {
+    isNormalUser = true;
+    group = "moviegroup";
+    description = "Read-only movie user for Samba";
+  };
+
+  environment.systemPackages = with pkgs; [
+    automake
+    qjackctl
+    libjack2
+    jack2
+    pavucontrol
+    bluez-tools
+    pulseaudioFull
+
+    s-tui
+    thermald
+    powertop
+    smartmontools
+    dmidecode
+    acpi
+    brightnessctl
+    libimobiledevice
+    ifuse
+    wget
+    gsimplecal
+    wmctrl
+    unzip
+
+    kdePackages.qt6ct
+    libsForQt5.qt5ct
+    kdePackages.breeze-icons
+    gnome-icon-theme
+    hicolor-icon-theme
+    shared-mime-info
+
+    bibata-cursors
+    nordzy-cursor-theme
+    numix-cursor-theme
+    openzone-cursors
+    vimix-cursors
+    volantes-cursors
+    xdotool
+    xautomation
+    libinput-gestures
+    libinput
+    inxi
+    xev
+    xauth
+    xinit
+    xorgserver
+    xclip
+    wev
+    sxhkd
+    libsForQt5.qt5.qtbase
+    gnome-remote-desktop
+    kdePackages.qtbase
+    kdePackages.kglobalacceld
+    kdePackages.kglobalaccel
+    libsForQt5.kglobalaccel
+    kdePackages.qttools
+    kdePackages.qtmultimedia
+    libsForQt5.ki18n
+    libsForQt5.qt5ct
+    kdePackages.ki18n
+    libnotify
+    playerctl
+    qpwgraph
+    font-manager
+    fontpreview
+    php
+    gparted
+    pciutils
+    psmisc
+    usbutils
+    inetutils
+    tcpdump
+    mtr
+    #cpu-x
+    vulkan-tools
+    linuxKernel.packages.linux_6_12.turbostat
+    linuxKernel.packages.linux_6_12.cpupower
+    toybox
+    tcpdump
+
+    x2goserver
+    xfwm4
+    thunar
+    #mate-session-manager
+    openbox
+
+    wayvnc
+    tigervnc
+    #ngrok
+    #nextcloud-client
+    #sing-box
+    #gui-for-singbox
+    apparmor-bin-utils
+    policycoreutils
+
+    mosquitto
+  ];
+
+  programs.zsh.enable = true;
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+  ];
+
+  system.activationScripts.diff = {
+    supportsDryActivation = true;
+    text = ''
+      ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff \
+           /run/current-system "$systemConfig"
+    '';
+  };
+
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
+
+  # List services that you want to enable:
+
+  programs.bandwhich.enable = true;
+
+  programs.clash-verge = {
+    enable = true;
+    autoStart = false;
+    tunMode = true;
+    serviceMode = true;
+  };
+  #systemd.services.my-clash-engine = {
+  #enable = true; # This should be implicitly true, but let's be explicit.
+  #description = "Custom Clash Core Engine Service";
+  #wantedBy = [ "multi-user.target" ];
+  #after = [ "network-online.target" ];
+  #serviceConfig = {
+  #Type = "simple";
+  #ExecStart = "${pkgs.clash-verge-rev}/bin/verge-mihomo -f /etc/clash-config.yaml";
+  #Restart = "on-failure";
+  #User = "root";
+  #AmbientCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_BIND_SERVICE" ];
+  #CapabilityBoundingSet = [ "CAP_NET_ADMIN" "CAP_NET_BIND_SERVICE" ];
+  #};
+  #};
+  #systemd.services.clash-verge = {
+  #serviceConfig = {
+  #ExecStart = "${pkgs.clash-verge-rev}/bin/clash-verge-service -d /var/lib/clash-verge-rev";
+  #};
+  #};
+
+  services.shadowsocks.enable = false;
+  services.v2raya.enable = true;
+  services.v2ray.enable = false;
+  services.xray.enable = false;
+  services.mullvad-vpn.enable = false;
+
+  services.dictd.enable = false;
+
+  services.paperless.enable = false;
+
+  services.radarr = {
+    enable = false;
+  };
+  services.sonarr = {
+    enable = false;
+  };
+  services.prowlarr = {
+    enable = false;
+  };
+
+  services.syncthing = {
+    enable = true;
+    user = "py";
+    dataDir = "/home/py/Sync";
+    openDefaultPorts = true;
+  };
+
+  services.deluge = {
+    enable = true;
+    declarative = true;
+    user = "py";
+    group = "sambashare";
+    dataDir = "/home/py";
+    openFirewall = true;
+    authFile =
+      let
+        deluge_auth_file = (
+          builtins.toFile "auth" ''
+            localclient::10
+          ''
+        );
+      in
+      deluge_auth_file;
+    config = {
+      allow_remote = true;
+      download_location = "/storage/myfiles/movies/";
+      max_active_limit = 15;
+      max_active_downloading = 15;
+      max_active_seeding = 10;
+    };
+  };
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "25.05"; # Did you read the comment?
+
+}

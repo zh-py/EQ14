@@ -1,0 +1,34 @@
+set hidden
+set icons
+set number
+
+
+
+
+cmd unarchive ${{
+  case "$f" in
+      *.zip) unzip "$f" ;;
+      *.tar.gz) tar -xzvf "$f" ;;
+      *.tar.bz2) tar -xjvf "$f" ;;
+      *.tar) tar -xvf "$f" ;;
+      *) echo "Unsupported format" ;;
+  esac
+}}
+
+
+
+
+
+
+map ta unarchive
+
+
+map dd trash
+map gc cd ~/.config
+map gd cd ~/Downloads
+map gh cd ~
+map gn cd /etc/nixos/
+map i $less $f
+map md mkdir
+
+

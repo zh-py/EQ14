@@ -1,0 +1,3 @@
+!keysym 0x5C = Return
+keycode 51 = Return
+keycode 36 = backslash bar
