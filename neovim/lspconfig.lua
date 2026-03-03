@@ -153,6 +153,19 @@ local servers = {
 		},
 	},
 
+	jsonls = {
+		cmd = { "vscode-json-languageserver", "--stdio" },
+		filetypes = { "json", "jsonc" },
+		root_markers = { "package.json", ".git" },
+		single_file_support = true,
+		settings = {
+			json = {
+				schemas = require('schemastore').json.schemas(),
+				validate = { enable = true },
+			},
+		},
+	},
+
 	marksman = {
 		cmd = { "marksman" },
 		filetypes = { "markdown" }
