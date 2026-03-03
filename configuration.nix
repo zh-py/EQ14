@@ -1297,6 +1297,8 @@
 
   hardware.intel-gpu-tools.enable = true;
 
+  services.envfs.enable = true;
+
   services.open-webui = {
     enable = true;
     port = 11111;
