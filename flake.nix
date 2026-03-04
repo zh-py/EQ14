@@ -5,7 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nix-openclaw.url = "github:openclaw/nix-openclaw";
+    #nix-openclaw.url = "github:openclaw/nix-openclaw";
     #nix-steipete-tools-summarize.url = "github:openclaw/nix-steipete-tools?dir=tools/summarize";
   };
 
@@ -13,7 +13,7 @@
     inputs@{
       nixpkgs,
       home-manager,
-      nix-openclaw,
+      #nix-openclaw,
       ...
     }:
     {
@@ -29,7 +29,7 @@
               home-manager.useUserPackages = true;
               home-manager.users.py = import ./home.nix;
               home-manager.sharedModules = [
-                nix-openclaw.homeManagerModules.openclaw
+                #nix-openclaw.homeManagerModules.openclaw
               ];
             }
           ];

@@ -33,9 +33,9 @@
   imports = [
     ./hardware-configuration.nix
   ];
-  nixpkgs.overlays = [
-    inputs.nix-openclaw.overlays.default
-  ];
+  #nixpkgs.overlays = [
+  #inputs.nix-openclaw.overlays.default
+  #];
 
   nixpkgs.config = {
     allowUnfree = true;
@@ -319,7 +319,7 @@
         #5050 # pgAdmin4
         #5432 # pgAdmin to postgres
         11111 # open-webui
-        18789 # claw
+        #18789 # claw
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -351,9 +351,8 @@
       #'';
     };
 
-    extraHosts = ''
-      192.168.2.1 openclaw.local
-    '';
+    extraHosts = "";
+    #192.168.2.1 openclaw.local
     #192.168.124.15 nextcloud.tailffcc5b.ts.net
     #'';
 
@@ -601,6 +600,27 @@
     backend = "docker";
 
     containers = {
+
+      openclaw = {
+        image = "ghcr.io/openclaw/openclaw:latest";
+        autoStart = true;
+        volumes = [
+          "/home/py/.openclaw:/home/node/.openclaw"
+          "/storage/openclaw:/storage/openclaw"
+          "/etc/profiles/per-user/py/bin/gemini:/usr/bin/gemini"
+          #"/home/py/.local/state/openclaw:/home/node/.local/state/openclaw" # Persist the state (for subagent sessions)
+        ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        user = "1000:100";
+        extraOptions = [
+          "--network=host"
+          "--dns=1.1.1.1" # Force Cloudflare DNS
+          "--dns=8.8.8.8" # Force Google DNS
+          #"--pull=always"
+        ];
+      };
 
       #openclaw = {
       #image = "ghcr.io/openclaw/openclaw:latest";
@@ -1296,8 +1316,6 @@
   systemd.targets.hybrid-sleep.enable = false;
 
   hardware.intel-gpu-tools.enable = true;
-
-  services.envfs.enable = true;
 
   services.open-webui = {
     enable = true;
