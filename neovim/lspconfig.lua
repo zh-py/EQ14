@@ -1,8 +1,8 @@
-local lspconfig = require('lspconfig')
+local lspconfig = require("lspconfig")
 local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
+capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
 vim.lsp.set_log_level("error")
-vim.lsp.config('*', {
+vim.lsp.config("*", {
 	capabilities = capabilities,
 })
 
@@ -45,45 +45,74 @@ local servers = {
 			client.server_capabilities.documentFormattingProvider = false
 			client.server_capabilities.documentRangeFormattingProvider = false
 
-			vim.keymap.set('n', '<F4>', function() require('dap').continue() end, { buffer = bufnr })
-			vim.keymap.set('n', '<F6>', function() require('dap').restart() end, { buffer = bufnr })
-			vim.keymap.set('n', '<F3>', function() require('dap').step_over() end, { buffer = bufnr })
-			vim.keymap.set('n', '<F1>', function() require('dap').step_into() end, { buffer = bufnr })
-			vim.keymap.set('n', '<F2>', function() require('dap').step_out() end, { buffer = bufnr })
-			vim.keymap.set('n', '<leader>s', function() require('dap').terminate() end, { buffer = bufnr })
-			vim.keymap.set('n', '<F8>', function() require('dap').toggle_breakpoint() end, { buffer = bufnr })
-			vim.keymap.set('n', '<F9>', function()
-				require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: '))
+			vim.keymap.set("n", "<F4>", function()
+				require("dap").continue()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<F6>", function()
+				require("dap").restart()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<F3>", function()
+				require("dap").step_over()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<F1>", function()
+				require("dap").step_into()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<F2>", function()
+				require("dap").step_out()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<leader>s", function()
+				require("dap").terminate()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<F8>", function()
+				require("dap").toggle_breakpoint()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<F9>", function()
+				require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
 			end, { buffer = bufnr })
 
-			vim.keymap.set('n', '<leader>dp', function() require("dap").pause() end, { buffer = bufnr })
-			vim.keymap.set('n', '<Leader>lp', function()
-				require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: '))
+			vim.keymap.set("n", "<leader>dp", function()
+				require("dap").pause()
 			end, { buffer = bufnr })
-			vim.keymap.set('n', '<leader>lb', function() require('dap').list_breakpoints() end, { buffer = bufnr })
-			vim.keymap.set('n', '<leader>cb', function() require('dap').clear_breakpoints() end, { buffer = bufnr })
-			vim.keymap.set('n', '<Leader>dr', function() require('dap').repl.toggle() end, { buffer = bufnr })
-			vim.keymap.set("n", "<leader>du", function() require('dapui').toggle() end, { buffer = bufnr })
-			vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end, { buffer = bufnr })
-			vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function() require('dap.ui.widgets').hover() end,
-				{ buffer = bufnr })
-			vim.keymap.set({ 'n', 'v' }, '<Leader>dp', function() require('dap.ui.widgets').preview() end,
-				{ buffer = bufnr })
-			vim.keymap.set({ 'n', 'v' }, '<Leader>de', function() require('dapui').eval() end, { buffer = bufnr })
-			vim.keymap.set('n', '<Leader>df', function()
-				local widgets = require('dap.ui.widgets')
+			vim.keymap.set("n", "<Leader>lp", function()
+				require("dap").set_breakpoint(nil, nil, vim.fn.input("Log point message: "))
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<leader>lb", function()
+				require("dap").list_breakpoints()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<leader>cb", function()
+				require("dap").clear_breakpoints()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<Leader>dr", function()
+				require("dap").repl.toggle()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<leader>du", function()
+				require("dapui").toggle()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<Leader>dl", function()
+				require("dap").run_last()
+			end, { buffer = bufnr })
+			vim.keymap.set({ "n", "v" }, "<Leader>dh", function()
+				require("dap.ui.widgets").hover()
+			end, { buffer = bufnr })
+			vim.keymap.set({ "n", "v" }, "<Leader>dp", function()
+				require("dap.ui.widgets").preview()
+			end, { buffer = bufnr })
+			vim.keymap.set({ "n", "v" }, "<Leader>de", function()
+				require("dapui").eval()
+			end, { buffer = bufnr })
+			vim.keymap.set("n", "<Leader>df", function()
+				local widgets = require("dap.ui.widgets")
 				widgets.centered_float(widgets.frames)
 			end, { buffer = bufnr })
-			vim.keymap.set('n', '<Leader>ds', function()
-				local widgets = require('dap.ui.widgets')
+			vim.keymap.set("n", "<Leader>ds", function()
+				local widgets = require("dap.ui.widgets")
 				widgets.centered_float(widgets.scopes)
 			end, { buffer = bufnr })
 		end,
 	},
 
-
 	pylsp = {
-		cmd = { 'pylsp' },
+		cmd = { "pylsp" },
 		filetypes = { "python" },
 		single_file_support = true,
 		on_attach = function(client)
@@ -116,9 +145,8 @@ local servers = {
 		},
 	},
 
-
 	lua_ls = {
-		cmd = { 'lua-language-server' },
+		cmd = { "lua-language-server" },
 
 		filetypes = { "lua" },
 		on_attach = function(client)
@@ -140,14 +168,14 @@ local servers = {
 	},
 
 	nil_ls = {
-		cmd = { 'nil' },
+		cmd = { "nil" },
 		on_attach = function(client)
 			client.server_capabilities.documentFormattingProvider = true
 			client.server_capabilities.documentRangeFormattingProvider = true
 		end,
 		filetypes = { "nix" },
 		settings = {
-			['nil'] = {
+			["nil"] = {
 				formatting = { command = { "nixfmt" } },
 			},
 		},
@@ -160,20 +188,28 @@ local servers = {
 		single_file_support = true,
 		settings = {
 			json = {
-				schemas = require('schemastore').json.schemas(),
+				schemas = require("schemastore").json.schemas(),
 				validate = { enable = true },
 			},
 		},
 	},
 
+	bashls = {
+		cmd = { "bash-language-server", "start" },
+		filetypes = { "sh", "bash", "zsh" },
+		-- Native API keys (optional but good for consistency)
+		root_markers = { ".git" },
+		single_file_support = true,
+	},
+
 	marksman = {
 		cmd = { "marksman" },
-		filetypes = { "markdown" }
+		filetypes = { "markdown" },
 	},
 
 	texlab = {
 		cmd = { "texlab" },
-		filetypes = { "tex", "plaintex" }
+		filetypes = { "tex", "plaintex" },
 	},
 }
 
@@ -211,54 +247,57 @@ end
 --})
 --end
 
-
-
-
-
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
-vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
-vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
+vim.keymap.set("n", "<space>e", vim.diagnostic.open_float)
+vim.keymap.set("n", "[d", vim.diagnostic.goto_prev)
+vim.keymap.set("n", "]d", vim.diagnostic.goto_next)
+vim.keymap.set("n", "<space>q", vim.diagnostic.setloclist)
 
 -- Use LspAttach autocommand to only map the following keys
 -- after the language server attaches to the current buffer
-vim.api.nvim_create_autocmd('LspAttach', {
-	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+vim.api.nvim_create_autocmd("LspAttach", {
+	group = vim.api.nvim_create_augroup("UserLspConfig", {}),
 	callback = function(ev)
 		-- Enable completion triggered by <c-x><c-o>
-		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+		vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
 
 		-- Buffer local mappings.
 		-- See `:help vim.lsp.*` for documentation on any of the below functions
 		local opts = { buffer = ev.buf }
-		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-		vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-		vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-		vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
-		vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
-		vim.keymap.set('n', '<space>wl', function() print(vim.inspect(vim.lsp.buf.list_workspace_folders())) end, opts)
-		vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
-		vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-		vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
-		--vim.keymap.set('n', '<space>f', function() vim.lsp.buf.format { async = true } end, opts)
-		vim.keymap.set('n', '<space>f', function()
-			require("conform").format({
-				lsp_fallback = true,
-				async = true,
-			})
+		vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+		vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+		vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+		vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+		vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, opts)
+		vim.keymap.set("n", "<space>wa", vim.lsp.buf.add_workspace_folder, opts)
+		vim.keymap.set("n", "<space>wr", vim.lsp.buf.remove_workspace_folder, opts)
+		vim.keymap.set("n", "<space>wl", function()
+			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
 		end, opts)
+		vim.keymap.set("n", "<space>D", vim.lsp.buf.type_definition, opts)
+		vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, opts)
+		vim.keymap.set({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
+		--vim.keymap.set('n', '<space>f', function() vim.lsp.buf.format { async = true } end, opts)
+		--vim.keymap.set('n', '<space>f', function()
+		--require("conform").format({
+		--lsp_fallback = true,
+		--async = true,
+		--})
+		--end, opts)
 		--vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-		vim.keymap.set('n', 'gr', require('telescope.builtin').lsp_references, opts)
+		vim.keymap.set("n", "gr", require("telescope.builtin").lsp_references, opts)
 	end,
 })
 
+vim.keymap.set("n", "<space>f", function()
+	require("conform").format({
+		lsp_fallback = true, -- If no conform formatter, try LSP
+		async = true,
+	})
+end, { desc = "Format buffer (Conform/LSP)" })
 
-
-require('lspkind').init({
+require("lspkind").init({
 	-- DEPRECATED (use mode instead): enables text annotations
 	--
 	-- default: true
@@ -267,14 +306,14 @@ require('lspkind').init({
 	-- defines how annotations are shown
 	-- default: symbol
 	-- options: 'text', 'text_symbol', 'symbol_text', 'symbol'
-	mode = 'symbol_text',
+	mode = "symbol_text",
 
 	-- default symbol map
 	-- can be either 'default' (requires nerd-fonts font) or
 	-- 'codicons' for codicon preset (requires vscode-codicons font)
 	--
 	-- default: 'default'
-	preset = 'codicons',
+	preset = "codicons",
 
 	-- override preset symbols
 	--

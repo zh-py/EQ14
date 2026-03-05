@@ -174,8 +174,10 @@
     poetry
     luajitPackages.luacheck
     lua-language-server
+    stylua
     marksman
     vscode-json-languageserver
+    shfmt
     prettier
     tree-sitter
     tree-sitter-grammars.tree-sitter-python
@@ -259,7 +261,6 @@
           python-lsp-ruff
           ruff
           black
-          stylua
           pynvim
           send2trash
           openpyxl
@@ -1061,6 +1062,16 @@
         plugin = conform-nvim;
         type = "lua";
         config = builtins.readFile (./neovim/conform.lua);
+      }
+      {
+        plugin = opencode-nvim;
+        type = "lua";
+        config = builtins.readFile (./neovim/opencode.lua);
+      }
+      {
+        plugin = snacks-nvim;
+        type = "lua";
+        config = builtins.readFile (./neovim/snacks.lua);
       }
       cmp-buffer
       cmp-path

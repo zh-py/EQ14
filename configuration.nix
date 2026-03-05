@@ -596,6 +596,39 @@
   #text = ''${pkgs.docker}/bin/docker network inspect pgnet >/dev/null 2>&1 || \ ${pkgs.docker}/bin/docker network create --driver bridge pgnet '';
   #}; # this also works, starts at every nixos switch
 
+  virtualisation.docker = {
+    enable = true;
+
+    extraOptions = "--iptables=false";
+
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
+    };
+
+    autoPrune = {
+      enable = true;
+      dates = "weekly";
+    };
+
+    daemon.settings = {
+      ## Use port 20172 for HTTP protocol with "Rule of Splitting Traffic"
+      #"http-proxy" = "http://127.0.0.1:20172";
+      #"https-proxy" = "http://127.0.0.1:20172";
+      ## It's important to tell Docker not to proxy internal Docker network traffic.
+      ## 172.17.0.0/16 is the default Docker bridge.
+      ## 172.20.0.0/16 is the range for 'nextcloud-aio' network in your compose.yml.
+      #"no-proxy" = "localhost,127.0.0.1,172.17.0.0/16,172.20.0.0/16";
+      #data-root = "/storage/docker";
+    };
+    #daemon.settings = {
+    #dns = [
+    #"8.8.8.8"
+    #"1.1.1.1"
+    #];
+    #};
+  };
+
   virtualisation.oci-containers = {
     backend = "docker";
 
@@ -608,6 +641,7 @@
           "/home/py/.openclaw:/home/node/.openclaw"
           "/storage/openclaw:/storage/openclaw"
           "/etc/profiles/per-user/py/bin/gemini:/usr/bin/gemini"
+          "/run/docker.sock:/run/docker.sock"
           #"/home/py/.local/state/openclaw:/home/node/.local/state/openclaw" # Persist the state (for subagent sessions)
         ];
         environment = {
@@ -620,6 +654,25 @@
           "--dns=8.8.8.8" # Force Google DNS
           #"--pull=always"
         ];
+      };
+
+      openclaw-sandbox = {
+        image = "openclaw-sandbox:bookworm-slim";
+        autoStart = true;
+        volumes = [
+          "/storage/openclaw:/home/sandbox/.openclaw"
+        ];
+        environment = {
+          TZ = "Asia/Shanghai";
+        };
+        extraOptions = [
+          "--network=host"
+          # Add resource limits if needed
+          #"--memory=2g"
+          #"--cpus=2"
+        ];
+        # Ensure sandbox starts after main container if there's dependency
+        dependsOn = [ "openclaw" ]; # If using docker-compose style
       };
 
       #openclaw = {
@@ -758,7 +811,7 @@
       node-red = {
         image = "nodered/node-red:latest";
         ports = [ "1880:1880" ];
-        volumes = [ "node-red-data:/data" ];
+        volumes = [ "/storage/node-red:/data" ];
         environment = {
           TZ = "Asia/Shanghai";
         };
@@ -1126,38 +1179,6 @@
   services.samba-wsdd = {
     enable = true;
     openFirewall = true;
-  };
-
-  virtualisation.docker = {
-    enable = true;
-
-    extraOptions = "--iptables=false";
-
-    rootless = {
-      enable = true;
-      setSocketVariable = true;
-    };
-
-    autoPrune = {
-      enable = true;
-      dates = "weekly";
-    };
-
-    daemon.settings = {
-      ## Use port 20172 for HTTP protocol with "Rule of Splitting Traffic"
-      #"http-proxy" = "http://127.0.0.1:20172";
-      #"https-proxy" = "http://127.0.0.1:20172";
-      ## It's important to tell Docker not to proxy internal Docker network traffic.
-      ## 172.17.0.0/16 is the default Docker bridge.
-      ## 172.20.0.0/16 is the range for 'nextcloud-aio' network in your compose.yml.
-      #"no-proxy" = "localhost,127.0.0.1,172.17.0.0/16,172.20.0.0/16";
-    };
-    #daemon.settings = {
-    #dns = [
-    #"8.8.8.8"
-    #"1.1.1.1"
-    #];
-    #};
   };
 
   time.timeZone = "Asia/Shanghai";
