@@ -561,6 +561,7 @@
       ExecStart = ''
         /run/current-system/sw/bin/bash "/home/py/Dropbox (Maestral)/mac_config/Scripts/dockerupdate.sh"
       '';
+      runAsRoot = true;
     };
     path = [
       pkgs.docker
@@ -635,45 +636,50 @@
     containers = {
 
       openclaw = {
-        image = "ghcr.io/openclaw/openclaw:latest";
+        #image = "ghcr.io/openclaw/openclaw:latest";
+        image = "openclaw:local";
         autoStart = true;
+        user = "1000:131";
         volumes = [
           "/home/py/.openclaw:/home/node/.openclaw"
           "/storage/openclaw:/storage/openclaw"
           "/etc/profiles/per-user/py/bin/gemini:/usr/bin/gemini"
-          "/run/docker.sock:/run/docker.sock"
-          #"/home/py/.local/state/openclaw:/home/node/.local/state/openclaw" # Persist the state (for subagent sessions)
+          #"/run/docker.sock:/run/docker.sock"
+          "/var/run/docker.sock:/var/run/docker.sock"
+          #"/nix/store/9jk9p6679rz3lsc0mdnyf8h8yq4y8cc6-docker-29.2.1/bin/docker:/usr/bin/docker"
+          #"/nix/store:/nix/store:ro"
         ];
         environment = {
           TZ = "Asia/Shanghai";
+          OPENCLAW_INSTALL_DOCKER_CLI = "1";
         };
-        user = "1000:100";
         extraOptions = [
           "--network=host"
           "--dns=1.1.1.1" # Force Cloudflare DNS
           "--dns=8.8.8.8" # Force Google DNS
+          "--group-add=131" # Docker group ID
           #"--pull=always"
         ];
       };
 
-      openclaw-sandbox = {
-        image = "openclaw-sandbox:bookworm-slim";
-        autoStart = true;
-        volumes = [
-          "/storage/openclaw:/home/sandbox/.openclaw"
-        ];
-        environment = {
-          TZ = "Asia/Shanghai";
-        };
-        extraOptions = [
-          "--network=host"
-          # Add resource limits if needed
-          #"--memory=2g"
-          #"--cpus=2"
-        ];
-        # Ensure sandbox starts after main container if there's dependency
-        dependsOn = [ "openclaw" ]; # If using docker-compose style
-      };
+      #openclaw-sandbox = {
+      #image = "openclaw-sandbox:bookworm-slim";
+      #autoStart = true;
+      #volumes = [
+      #"/storage/openclaw:/home/sandbox/.openclaw"
+      #];
+      #environment = {
+      #TZ = "Asia/Shanghai";
+      #};
+      #extraOptions = [
+      #"--network=host"
+      ## Add resource limits if needed
+      ##"--memory=2g"
+      ##"--cpus=2"
+      #];
+      # Ensure sandbox starts after main container if there's dependency
+      #dependsOn = [ "openclaw" ]; # If using docker-compose style
+      #};
 
       #openclaw = {
       #image = "ghcr.io/openclaw/openclaw:latest";
