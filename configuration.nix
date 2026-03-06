@@ -83,14 +83,13 @@
   #HandlepowerKey = "suspend";
   #HandlepowerKeyLongPress = "reboot";
   #};
-
-  systemd.sleep.extraConfig = ''
-    AllowSuspend=yes
-    AllowHibernation=yes
-    AllowHybridSleep=yes
-    AllowSuspendThenHibernate=yes
-    HibernateDelaySec=1h
-  '';
+  systemd.sleep.settings.Sleep = {
+    AllowSuspend = "yes";
+    AllowHibernation = "yes";
+    AllowHybridSleep = "yes";
+    AllowSuspendThenHibernate = "yes";
+    HibernateDelaySec = "1h";
+  };
 
   ##services.udev.extraRules = ''
   ##SUBSYSTEM=="net", ACTION=="add", KERNEL=="enp2s0", RUN+="${pkgs.ethtool}/bin/ethtool -s %k wol g"
@@ -635,32 +634,34 @@
 
     containers = {
 
-      openclaw = {
-        #image = "ghcr.io/openclaw/openclaw:latest";
-        image = "openclaw:local";
-        autoStart = true;
-        user = "1000:131";
-        volumes = [
-          "/home/py/.openclaw:/home/node/.openclaw"
-          "/storage/openclaw:/storage/openclaw"
-          "/etc/profiles/per-user/py/bin/gemini:/usr/bin/gemini"
-          #"/run/docker.sock:/run/docker.sock"
-          "/var/run/docker.sock:/var/run/docker.sock"
-          #"/nix/store/9jk9p6679rz3lsc0mdnyf8h8yq4y8cc6-docker-29.2.1/bin/docker:/usr/bin/docker"
-          #"/nix/store:/nix/store:ro"
-        ];
-        environment = {
-          TZ = "Asia/Shanghai";
-          OPENCLAW_INSTALL_DOCKER_CLI = "1";
-        };
-        extraOptions = [
-          "--network=host"
-          "--dns=1.1.1.1" # Force Cloudflare DNS
-          "--dns=8.8.8.8" # Force Google DNS
-          "--group-add=131" # Docker group ID
-          #"--pull=always"
-        ];
-      };
+      #openclaw = {
+      ##image = "ghcr.io/openclaw/openclaw:latest";
+      #image = "openclaw:local";
+      #autoStart = true;
+      #user = "1000:1000";
+      #volumes = [
+      #"/home/py/.openclaw:/home/node/.openclaw"
+      #"/etc/profiles/per-user/py/bin/gemini:/usr/bin/gemini"
+      ##"/run/docker.sock:/run/docker.sock"
+      #"/var/run/docker.sock:/var/run/docker.sock"
+      ##"/nix/store/9jk9p6679rz3lsc0mdnyf8h8yq4y8cc6-docker-29.2.1/bin/docker:/usr/bin/docker"
+      ##"/nix/store:/nix/store:ro"
+      #];
+      #environment = {
+      #TZ = "Asia/Shanghai";
+      #OPENCLAW_INSTALL_DOCKER_CLI = "1";
+      #HOME = "/home/node"; # CRITICAL: Tells the agent to use the container home
+      #USER = "node";
+      #};
+      #extraOptions = [
+      #"--network=host"
+      #"--dns=1.1.1.1" # Force Cloudflare DNS
+      #"--dns=8.8.8.8" # Force Google DNS
+      #"--group-add=131" # Add docker group (GID 131) as supplementary
+      #"--group-add=100" # Add users group explicitly
+      ##"--pull=always"
+      #];
+      #};
 
       #openclaw-sandbox = {
       #image = "openclaw-sandbox:bookworm-slim";
@@ -1657,9 +1658,14 @@
       "sambashare"
       "moviegroup"
       "dialout"
+      "openclaw-data"
     ];
     packages = with pkgs; [
     ];
+  };
+
+  users.groups.openclaw-data = {
+    gid = 100999;
   };
 
   users.groups.sambashare = { };
@@ -1752,6 +1758,7 @@
     tcpdump
     mtr
     #cpu-x
+    coreutils
     vulkan-tools
     linuxKernel.packages.linux_6_12.turbostat
     linuxKernel.packages.linux_6_12.cpupower

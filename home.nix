@@ -154,7 +154,6 @@
     yt-dlp
     btop
     htop
-    neofetch
     fastfetch
     dust
     fd
@@ -208,6 +207,10 @@
     evtest-qt
     evtest
     gemini-cli
+    #claude-code
+    #kilocode-cli
+    opencode
+    cursor-cli
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -758,6 +761,8 @@
       proxychains = "proxychains4";
       ll = "ls -l";
       iu = "cd /storage/immich-app && docker compose pull && docker compose up -d";
+      cu = "cd /storage/openclaw-source && docker compose pull && docker compose up -d && cd -";
+      cr = "cd /storage/openclaw-source && docker compose down && docker compose up -d && cd -";
       y7 = "(){ yt-dlp -f 137+140 --no-mtime $1. ;}";
       y6 = "(){ yt-dlp -f 136+140 --no-mtime $1. ;}";
       y67 = "(){ yt-dlp -f '137+140/136+140' --no-mtime $1. ;}";
