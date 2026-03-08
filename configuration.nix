@@ -1658,12 +1658,16 @@
       "sambashare"
       "moviegroup"
       "dialout"
+      "docker-host"
       "openclaw-data"
     ];
     packages = with pkgs; [
     ];
   };
 
+  users.groups.docker-host = {
+    gid = 100130;
+  };
   users.groups.openclaw-data = {
     gid = 100999;
   };
@@ -1758,7 +1762,7 @@
     tcpdump
     mtr
     #cpu-x
-    coreutils
+    #coreutils
     vulkan-tools
     linuxKernel.packages.linux_6_12.turbostat
     linuxKernel.packages.linux_6_12.cpupower

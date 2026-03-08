@@ -211,6 +211,8 @@
     #kilocode-cli
     opencode
     cursor-cli
+    pgcli
+    #testdisk
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -757,6 +759,14 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     defaultKeymap = "emacs"; # others don't work as good as this
+    #initContent = ''
+    #claw() { docker exec -it openclaw-source-openclaw-gateway-1 openclaw "$@"; }
+    #'';
+    #initContent = builtins.readFile ./dotfiles/.zshrc;
+    initContent = builtins.readFile ./dotfiles/.zshrc + ''
+      claw() { docker exec -it openclaw-source-openclaw-gateway-1 openclaw "$@"; }
+      cca() { cp "$@" ~/.openclaw/workspace-coding_agent/files/; }
+    '';
     shellAliases = {
       proxychains = "proxychains4";
       ll = "ls -l";
@@ -804,7 +814,6 @@
         file = ".p10k.zsh";
       }
     ];
-    initContent = builtins.readFile ./dotfiles/.zshrc;
     #envExtra= builtins.readFile ./dotfiles/.zshenv;
     oh-my-zsh = {
       enable = true;
