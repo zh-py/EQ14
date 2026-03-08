@@ -848,7 +848,7 @@
       set number
       set wrap
       set linebreak
-      set clipboard=unnamed
+      set clipboard=unnamedplus
       set nu rnu
       let &scrolloff = 5
       nn <F7> :setlocal spell! spell?<CR>

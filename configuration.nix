@@ -316,7 +316,7 @@
         3000 # grafana
         #8888 # influxdb3 influxdb3-explorer
         #5050 # pgAdmin4
-        #5432 # pgAdmin to postgres
+        5432 # pgAdmin to postgres
         11111 # open-webui
         #18789 # claw
       ];
