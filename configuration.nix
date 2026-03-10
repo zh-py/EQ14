@@ -544,14 +544,7 @@
     enable = true;
     openFirewall = true;
   };
-  #services.eternal-terminal = {
-  #enable = true;
-  #};
-  #systemd.services.eternal-terminal.serviceConfig = {
-  #Type = lib.mkForce "simple";
-  #ExecStart = lib.mkForce "${pkgs.eternal-terminal}/bin/etserver --cfgfile=/etc/et.cfg";
-  #Restart = "on-failure";
-  #};
+  services.eternal-terminal.enable = true;
 
   systemd.services.dockerupdate = {
     description = "Update Docker containers";
