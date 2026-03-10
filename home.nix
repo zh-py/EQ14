@@ -178,6 +178,7 @@
     vscode-json-languageserver
     shfmt
     prettier
+    yaml-language-server
     tree-sitter
     tree-sitter-grammars.tree-sitter-python
     texlab
@@ -212,6 +213,8 @@
     opencode
     cursor-cli
     pgcli
+    visidata
+    openai-whisper
     #testdisk
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
@@ -642,10 +645,11 @@
     ];
     extraConfig = ''
       set-option -g mouse on
-      set -g default-terminal "tmux-256color"
       set -ag terminal-overrides ",xterm-256color:RGB"
+      set -g default-terminal "tmux-256color"
       set -g allow-passthrough on
       set -as terminal-features ',linux:clipboard'
+      set -s extended-keys on
     '';
   };
 
@@ -1164,6 +1168,25 @@
             dot_repeat = true,
             on_error = nil,
             }
+        '';
+      }
+      {
+        plugin = csvview-nvim;
+        type = "lua";
+        config = ''
+          require("csvview").setup({
+            parser = {
+              comments = { "#", "//" },
+            },
+            keymaps = {
+              textobject_field_inner = { "if", mode = { "o", "x" } },
+              textobject_field_outer = { "af", mode = { "o", "x" } },
+              jump_next_field_end = { "<Tab>", mode = { "n", "v" } },
+              jump_prev_field_end = { "<S-Tab>", mode = { "n", "v" } },
+              jump_next_row = { "<Enter>", mode = { "n", "v" } },
+              jump_prev_row = { "<S-Enter>", mode = { "n", "v" } },
+            },
+          })
         '';
       }
       nvim-dap

@@ -5,6 +5,7 @@ require("conform").setup({
 		nix = { "nixfmt" },
 		lua = { "stylua" },
 		json = { "prettier" },
+		yaml = { "prettier" },
 		sh = { "shfmt" },
 		bash = { "shfmt" },
 		zsh = { "shfmt" },

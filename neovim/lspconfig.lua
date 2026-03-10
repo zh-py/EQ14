@@ -211,6 +211,23 @@ local servers = {
 		cmd = { "texlab" },
 		filetypes = { "tex", "plaintex" },
 	},
+
+	yamlls = {
+		cmd = { "yaml-language-server", "--stdio" },
+		filetypes = { "yaml", "yml" },
+		root_markers = { ".git", ".yaml-cpp.json" },
+		single_file_support = true,
+		settings = {
+			yaml = {
+				validate = true,
+				format = { tabWidth = 2 },
+				schemaStore = {
+					enable = true,
+					url = "https://www.schemastore.org/api/json/catalog.json",
+				},
+			},
+		},
+	},
 }
 
 for name, config in pairs(servers) do
