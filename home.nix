@@ -1170,6 +1170,7 @@
             }
         '';
       }
+      csv-vim
       {
         plugin = csvview-nvim;
         type = "lua";
@@ -1177,6 +1178,10 @@
           require("csvview").setup({
             parser = {
               comments = { "#", "//" },
+            },
+            view = {
+              min_column_width = 3,
+              spacing = 1,
             },
             keymaps = {
               textobject_field_inner = { "if", mode = { "o", "x" } },
