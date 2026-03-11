@@ -651,6 +651,7 @@
       set -g allow-passthrough on
       set -as terminal-features ',linux:clipboard'
       set -s extended-keys on
+      set -ga terminal-overrides ',*:extkeys'
     '';
   };
 
