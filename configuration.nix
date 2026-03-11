@@ -1756,7 +1756,6 @@
     toybox
     tcpdump
 
-    nh
     nvd
 
     x2goserver
@@ -1796,7 +1795,7 @@
     flake = "/etc/nixos"; # Tells NH where your config lives globally
     clean = {
       enable = true;
-      extraArgs = "--keep-since 4d --keep 3";
+      extraArgs = "--keep-since 20d --keep 6";
     };
   };
   nix.gc.automatic = false;
