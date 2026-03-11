@@ -56,12 +56,6 @@
 
   #systemd.extraConfig = "DefaultLimitNOFILE=4096";
 
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 30d";
-  };
-
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
@@ -1762,6 +1756,9 @@
     toybox
     tcpdump
 
+    nh
+    nvd
+
     x2goserver
     xfwm4
     thunar
@@ -1788,10 +1785,21 @@
   system.activationScripts.diff = {
     supportsDryActivation = true;
     text = ''
-      ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff \
+      export TERM=xterm-256color
+      ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
            /run/current-system "$systemConfig"
     '';
   };
+
+  programs.nh = {
+    enable = true;
+    flake = "/etc/nixos"; # Tells NH where your config lives globally
+    clean = {
+      enable = true;
+      extraArgs = "--keep-since 4d --keep 3";
+    };
+  };
+  nix.gc.automatic = false;
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
