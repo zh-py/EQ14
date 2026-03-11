@@ -651,7 +651,6 @@
       set -g allow-passthrough on
       set -as terminal-features ',linux:clipboard'
       set -s extended-keys on
-      bind -n C-. display-message "Ctrl-dot works"
     '';
   };
 
@@ -1006,12 +1005,17 @@
         plugin = fzf-lua;
         type = "lua";
         config = ''
-          -- require("fzf-lua").setup({})
-          -- require('fzf-lua').setup({'fzf-native'})
-          -- vim.keymap.set("n", "<c-P>", "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
-          -- require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
-          require('fzf-lua').setup({'fzf-vim'})
+          local fzf = require('fzf-lua')
+          fzf.setup({'fzf-vim'})
+          fzf.register_ui_select()
         '';
+        #config = ''
+        #-- require("fzf-lua").setup({})
+        #-- require('fzf-lua').setup({'fzf-native'})
+        #-- vim.keymap.set("n", "<c-P>", "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
+        #-- require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+        #require('fzf-lua').setup({'fzf-vim'})
+        #'';
       }
       #{
       #plugin = nvim-tree-lua;
@@ -1135,7 +1139,7 @@
         config = builtins.readFile (./neovim/telescope.lua);
       }
       telescope-file-browser-nvim
-      telescope-ui-select-nvim
+      #telescope-ui-select-nvim
       {
         plugin = indent-blankline-nvim;
         type = "lua";
