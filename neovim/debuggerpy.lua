@@ -1,5 +1,5 @@
-require('dap-python').setup('~/.nix-profile/bin/python3/')
-require('telescope').load_extension('dap')
+require("dap-python").setup("~/.nix-profile/bin/python3/")
+require("telescope").load_extension("dap")
 require("dapui").setup()
 local dap, dapui = require("dap"), require("dapui")
 dap.listeners.before.attach.dapui_config = function()
@@ -23,22 +23,22 @@ dap.listeners.before.event_exited.dapui_config = function()
 	dapui.close()
 	dap.repl.close()
 end
-require("neodev").setup({ library = { plugins = { "nvim-dap-ui" }, types = true }, })
-vim.lsp.config('lua_ls', {
+require("neodev").setup({ library = { plugins = { "nvim-dap-ui" }, types = true } })
+vim.lsp.config["lua_ls"] = {
 	cmd = { "lua-language-server" },
 	filetypes = { "lua" },
 	settings = {
 		Lua = {
 			completion = {
-				callSnippet = "Replace"
+				callSnippet = "Replace",
 			},
 			diagnostics = { globals = { "vim" } },
-		}
-	}
-})
-vim.lsp.enable('lua_ls')
+		},
+	},
+}
+vim.lsp.enable("lua_ls")
 
-require('nvim-dap-virtual-text').setup()
+require("nvim-dap-virtual-text").setup()
 
 --below are in lspconfig.lua file, locally activated
 --

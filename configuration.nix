@@ -1684,6 +1684,7 @@
     pavucontrol
     bluez-tools
     pulseaudioFull
+    nodejs
 
     s-tui
     thermald

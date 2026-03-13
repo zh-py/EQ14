@@ -48,6 +48,7 @@ local opts = { desc = "Toggle opencode" }
 --vim.keymap.set({ "n", "t" }, "<F20>", toggle, opts)
 vim.keymap.set({ "n", "t" }, "\x1b[57383u", toggle, opts) --\x1b[57383u is F20 for kitty
 vim.keymap.set({ "n", "t" }, "<C-.>", toggle, opts)
+--vim.keymap.set({ "n", "t" }, "<C-,>", toggle, opts)
 
 vim.keymap.set({ "n", "x" }, "go", function()
 	return require("opencode").operator("@this ")

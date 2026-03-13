@@ -179,6 +179,7 @@
     shfmt
     prettier
     yaml-language-server
+    bash-language-server
     harper
     tree-sitter
     tree-sitter-grammars.tree-sitter-python
@@ -275,6 +276,7 @@
           openpyxl
           pytest
           torch
+          #markitdown
         ]
       )
     ))
@@ -772,6 +774,8 @@
     initContent = builtins.readFile ./dotfiles/.zshrc + ''
       claw() { docker exec -it openclaw-source-openclaw-gateway-1 openclaw "$@"; }
       cca() { cp "$@" ~/.openclaw/workspace-coding_agent/files/; }
+      export NPM_PACKAGES="$HOME/.npm-global"
+      export PATH="$HOME/.npm-global/bin:$PATH"
     '';
     shellAliases = {
       proxychains = "proxychains4";
