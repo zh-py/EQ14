@@ -6,6 +6,7 @@ require("conform").setup({
 		lua = { "stylua" },
 		json = { "prettier" },
 		yaml = { "prettier" },
+		toml = { "taplo" },
 		sh = { "shfmt" },
 		bash = { "shfmt" },
 		zsh = { "shfmt" },

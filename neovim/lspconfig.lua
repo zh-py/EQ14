@@ -256,6 +256,11 @@ local servers = {
 			},
 		},
 	},
+	taplo = {
+		cmd = { "taplo", "lsp", "stdio" },
+		filetypes = { "toml" },
+		root_markers = { ".git", "*.toml" },
+	},
 }
 
 for name, config in pairs(servers) do

@@ -180,6 +180,7 @@
     prettier
     yaml-language-server
     bash-language-server
+    taplo
     harper
     tree-sitter
     tree-sitter-grammars.tree-sitter-python
