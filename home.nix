@@ -170,7 +170,8 @@
     nil
     nixfmt
     pyright
-    poetry
+    #poetry
+    uv
     luajitPackages.luacheck
     lua-language-server
     stylua
@@ -775,6 +776,7 @@
     initContent = builtins.readFile ./dotfiles/.zshrc + ''
       claw() { docker exec -it openclaw-source-openclaw-gateway-1 openclaw "$@"; }
       cca() { cp "$@" ~/.openclaw/workspace-coding_agent/files/; }
+      csp() { cp "$@" ~/.openclaw/workspace-summarypdf_agent/files/; }
       export NPM_PACKAGES="$HOME/.npm-global"
       export PATH="$HOME/.npm-global/bin:$PATH"
     '';
@@ -838,6 +840,15 @@
         "terraform"
         "systemadmin"
       ];
+    };
+  };
+
+  programs.poetry = {
+    enable = true;
+    package = pkgs.poetry.withPlugins (ps: with ps; [ poetry-plugin-up ]);
+    settings = {
+      virtualenvs.create = true;
+      virtualenvs.in-project = true;
     };
   };
 
