@@ -212,6 +212,7 @@
     evtest-qt
     evtest
     gemini-cli
+    codex
     #claude-code
     #kilocode-cli
     opencode
