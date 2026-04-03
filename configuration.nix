@@ -313,6 +313,7 @@
         5432 # pgAdmin to postgres
         11111 # open-webui
         #18789 # claw
+        3002 # yan_medical
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -1685,6 +1686,8 @@
     bluez-tools
     pulseaudioFull
     nodejs
+    #pnpm
+    corepack
 
     s-tui
     thermald

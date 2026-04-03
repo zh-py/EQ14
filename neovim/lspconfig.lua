@@ -1,6 +1,5 @@
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
-vim.lsp.set_log_level("error")
 vim.lsp.config._default = {
 	capabilities = capabilities,
 }
@@ -241,6 +240,8 @@ local servers = {
 			"lua",
 			"tex",
 			"plaintex",
+			"text",
+			"txt",
 		},
 		root_markers = { ".git" },
 		root_dir = vim.fn.getcwd(),
@@ -251,7 +252,15 @@ local servers = {
 				linters = {
 					SpellCheck = true,
 					SpelledNumbers = false,
+					AnA = true,
 					SentenceCapitalization = true,
+					UnclosedQuotes = true,
+					WrongQuotes = false,
+					LongSentences = false,
+					RepeatedWords = true,
+					Spaces = true,
+					Matcher = true,
+					CorrectNumberSuffix = true,
 				},
 			},
 		},
