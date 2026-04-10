@@ -314,6 +314,7 @@
         11111 # open-webui
         #18789 # claw
         3002 # yan_medical
+        9090 # metacubex mihomo
       ];
       allowedUDPPorts = [
         #53 # DNS
@@ -548,7 +549,6 @@
       ExecStart = ''
         /run/current-system/sw/bin/bash "/home/py/Dropbox (Maestral)/mac_config/Scripts/dockerupdate.sh"
       '';
-      runAsRoot = true;
     };
     path = [
       pkgs.docker
@@ -565,6 +565,55 @@
       Persistent = true;
     };
   };
+
+  systemd.user.services.instagram-scraper = {
+    description = "Scrape Instagram for C206 pilot jobs";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/home/py/python/instagram/instagram-scraper.sh";
+    };
+    path = [
+      pkgs.python314
+      pkgs.uv
+      pkgs.chromium
+      pkgs.nix
+    ];
+    environment = {
+      PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "/etc/profiles/per-user/py/bin/chromium";
+    };
+  };
+  systemd.user.timers.instagram-scraper = {
+    description = "Run Instagram scraper at 4am and 4pm";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 04,16:00:00";
+      Persistent = true;
+    };
+  };
+  #systemd.services.instagram-scraper = {
+  #description = "Scrape Instagram";
+  #serviceConfig = {
+  #Type = "oneshot";
+  #ExecStart = "/home/py/python/instagram/instagram-scraper.sh";
+  #User = "py";
+  #};
+  #path = [
+  #pkgs.python314
+  #pkgs.uv
+  #pkgs.chromium
+  #];
+  #environment = {
+  #PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "/etc/profiles/per-user/py/bin/chromium";
+  #};
+  #};
+  #systemd.timers.instagram-scraper = {
+  #description = "Run Instagram scraper at 4am and 4pm";
+  #wantedBy = [ "timers.target" ];
+  #timerConfig = {
+  #OnCalendar = "*-*-* 04,16:00:00";
+  #Persistent = true;
+  #};
+  #};
 
   systemd.services.docker-network-pgnet = {
     description = "Ensure Docker network pgnet exists";
@@ -1822,6 +1871,13 @@
     tunMode = true;
     serviceMode = true;
   };
+  services.mihomo = {
+    enable = true;
+    configFile = "/etc/mihomo/config.yaml";
+    webui = pkgs.metacubexd;
+    tunMode = true;
+  };
+
   #systemd.services.my-clash-engine = {
   #enable = true; # This should be implicitly true, but let's be explicit.
   #description = "Custom Clash Core Engine Service";
@@ -1867,6 +1923,22 @@
     user = "py";
     dataDir = "/home/py/Sync";
     openDefaultPorts = true;
+  };
+
+  services.qbittorrent = {
+    enable = true;
+    user = "py";
+    group = "users";
+    openFirewall = true;
+    webuiPort = 9091;
+    #serverConfig = {
+    #Preferences = {
+    #WebUI = {
+    #Enabled = true;
+    #Address = "*";
+    #};
+    #};
+    #};
   };
 
   services.deluge = {

@@ -33,7 +33,7 @@
   # You should not change this value, even if you update Home Manager. If you do
   # want to update the value, then make sure to first check the Home Manager
   # release notes.
-  home.stateVersion = "24.11"; # Please read the comment before changing.
+  home.stateVersion = "25.05"; # Please read the comment before changing.
 
   #dconf = {
   #enable = true;
@@ -186,7 +186,7 @@
     tree-sitter
     tree-sitter-grammars.tree-sitter-python
     texlab
-    qbittorrent-enhanced
+    #qbittorrent-enhanced
     rutorrent
     rtorrent
     #spotify
@@ -589,6 +589,7 @@
 
   programs.git = {
     enable = true;
+    signing.format = null;
     settings = {
       user = {
         email = "pierrez1984@gmail.com";
@@ -863,6 +864,7 @@
     defaultEditor = true;
     viAlias = true;
     withPython3 = true;
+    withRuby = false;
     extraConfig = ''
       colorscheme gruvbox
       filetype plugin indent on
@@ -1067,6 +1069,7 @@
             "let g:vimtex_view_skim_reading_bar=1
             let g:vimtex_syntax_enabled=0
           '';
+        type = "viml";
       }
       #{
       #plugin = vim-latex-live-preview;
@@ -1086,6 +1089,7 @@
             let g:vim_markdown_toml_frontmatter = 1
             let g:vim_markdown_json_frontmatter = 1
           '';
+        type = "viml";
       }
       {
         plugin = nvim-lastplace;
